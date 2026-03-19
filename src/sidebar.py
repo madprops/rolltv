@@ -62,6 +62,8 @@ class Sidebar:
         )
 
         btn.pack(fill=tk.X, padx=10, pady=5)
+        btn.bind("<Enter>", lambda e: btn.config(bg=data.btn_active), add="+")
+        btn.bind("<Leave>", lambda e: btn.config(bg=data.btn_bg), add="+")
         return btn
 
     def create_main_sidebar(self) -> None:
@@ -90,10 +92,10 @@ class Sidebar:
 
         self.player.sidebar_filter_frame = tk.Frame(
             self.player.sidebar_frame,
-            bg=data.btn_bg,
+            bg=data.input_bg,
             highlightbackground=data.btn_border,
-            highlightcolor=data.btn_border,
-            highlightthickness=0,
+            highlightcolor=data.accent_color,
+            highlightthickness=1,
             bd=0,
         )
 
@@ -101,7 +103,7 @@ class Sidebar:
             self.player.sidebar_filter_frame,
             textvariable=self.player.history_filter_var,
             font=data.font_ui,
-            bg=data.btn_bg,
+            bg=data.input_bg,
             fg="gray",
             insertbackground=data.accent_color,
             relief=tk.FLAT,

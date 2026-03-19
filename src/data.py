@@ -26,10 +26,11 @@ class Data:
         self.info_fg = "#888888"
         self.list_select_bg = "#33467C"
         self.btn_border = "#1F2335"
+        self.input_bg = "#15161E"
+        self.play_bg = "#33467C"
         self.font_ui = ("Roboto", 11)
         self.name_font = ("Roboto", 14, "bold")
         self.status_font = ("Monospace", 12)
-        self.roll_text = "Roll"
         self.any_language = "Language"
         self.max_history_items = 1000
         self.max_country_items = 1000

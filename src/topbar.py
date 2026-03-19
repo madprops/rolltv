@@ -13,6 +13,41 @@ class Topbar:
         self.player = player
         self.create_topbar()
 
+    def bind_hover(self, btn: tk.Button) -> None:
+        def on_enter(e: Any) -> None:
+            if str(btn.cget("relief")) != tk.SUNKEN:
+                btn.config(bg=data.btn_active)
+
+        def on_leave(e: Any) -> None:
+            if str(btn.cget("relief")) != tk.SUNKEN:
+                btn.config(bg=data.btn_bg)
+
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+
+    def make_button(self, text, command) -> None:
+        btn = tk.Button(
+            self.player.btn_frame,
+            text=text,
+            command=command,
+            font=("Roboto", 11, "bold"),
+            bg=data.btn_bg,
+            fg=data.fg_color,
+            activebackground=data.accent_color,
+            activeforeground=data.bg_color,
+            relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightthickness=1,
+            cursor="hand2",
+            bd=0,
+            padx=12,
+            pady=4,
+        )
+
+        btn.pack(side=tk.LEFT, padx=5)
+        self.bind_hover(btn)
+        return btn
+
     def create_topbar(self) -> None:
         self.player.top_frame = tk.Frame(self.player.root, bg=data.bg_color)
         self.player.top_frame.pack(fill=tk.X, pady=10)
@@ -56,9 +91,9 @@ class Topbar:
 
         self.player.country_frame = tk.Frame(
             self.player.btn_frame,
-            bg=data.btn_bg,
+            bg=data.input_bg,
             highlightbackground=data.btn_border,
-            highlightcolor=data.btn_border,
+            highlightcolor=data.accent_color,
             highlightthickness=1,
             bd=0,
         )
@@ -70,7 +105,7 @@ class Topbar:
             self.player.country_frame,
             textvariable=self.player.country_var,
             font=data.font_ui,
-            bg=data.btn_bg,
+            bg=data.input_bg,
             fg="gray"
             if country_val == self.player.country_placeholder
             else data.fg_color,
@@ -93,7 +128,7 @@ class Topbar:
 
         style.configure(
             "TCombobox",
-            fieldbackground=data.btn_bg,
+            fieldbackground=data.input_bg,
             background=data.btn_bg,
             foreground=data.fg_color,
             arrowcolor=data.fg_color,
@@ -105,8 +140,8 @@ class Topbar:
 
         style.map(
             "TCombobox",
-            fieldbackground=[("readonly", data.btn_bg)],
-            selectbackground=[("readonly", data.btn_bg)],
+            fieldbackground=[("readonly", data.input_bg)],
+            selectbackground=[("readonly", data.input_bg)],
             selectforeground=[("readonly", data.accent_color)],
             background=[("readonly", data.btn_bg), ("active", data.btn_active)],
             bordercolor=[("readonly", data.btn_border)],
@@ -114,9 +149,11 @@ class Topbar:
 
         self.player.root.option_add("*TCombobox*Listbox.background", data.btn_bg)
         self.player.root.option_add("*TCombobox*Listbox.foreground", data.fg_color)
+
         self.player.root.option_add(
             "*TCombobox*Listbox.selectBackground", data.btn_active
         )
+
         self.player.root.option_add(
             "*TCombobox*Listbox.selectForeground", data.accent_color
         )
@@ -131,121 +168,14 @@ class Topbar:
         )
 
         self.player.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
+
         self.player.lang_cb.bind(
             "<<ComboboxSelected>>", self.player.on_language_selected
         )
 
-        self.player.copy_btn = tk.Button(
-            self.player.btn_frame,
-            text="Copy",
-            command=self.player.copy_link,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.player.copy_btn.pack(side=tk.LEFT, padx=5)
-
-        self.player.paste_btn = tk.Button(
-            self.player.btn_frame,
-            text="Paste",
-            command=self.player.paste_link,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.player.paste_btn.pack(side=tk.LEFT, padx=5)
-
-        self.player.world_btn = tk.Button(
-            self.player.btn_frame,
-            text="World",
-            command=self.player.toggle_globe,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-        self.player.world_btn.pack(
-            side=tk.LEFT, padx=5, before=self.player.country_frame
-        )
-
-        self.player.country_btn = tk.Button(
-            self.player.btn_frame,
-            text="Country",
-            command=self.player.toggle_country,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.player.country_btn.pack(side=tk.LEFT, padx=5)
-
-        self.player.history_btn = tk.Button(
-            self.player.btn_frame,
-            text="History",
-            command=self.player.toggle_history,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.player.history_btn.pack(side=tk.LEFT, padx=5)
-
-        self.player.play_btn = tk.Button(
-            self.player.btn_frame,
-            text=data.roll_text,
-            command=self.player.play_random,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.player.play_btn.pack(side=tk.LEFT, padx=5)
+        self.player.copy_btn = self.make_button("Copy", self.player.copy_link)
+        self.player.paste_btn = self.make_button("Paste", self.player.paste_link)
+        self.player.world_btn = self.make_button("World", self.player.toggle_globe)
+        self.player.country_btn = self.make_button("Country", self.player.toggle_country)
+        self.player.history_btn = self.make_button("History", self.player.toggle_history)
+        self.player.play_btn = self.make_button("Roll", self.player.play_random)
