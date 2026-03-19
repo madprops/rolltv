@@ -1,12 +1,12 @@
-import tkinter as tk
-from tkinter import ttk
-import urllib.request
-import random
 import os
+import json
+import mpv  # type: ignore
+import random
 import threading
 import subprocess
-import mpv  # type: ignore
-import json
+import tkinter as tk
+import urllib.request
+from tkinter import ttk
 from typing import Any, cast
 
 from utils import utils
@@ -288,7 +288,6 @@ class Player:
         for i in range(2):
             frame = tk.Frame(self.video_container, bg="black")
             frame.grid(row=0, column=0, sticky="nsew")
-
             frame.bind("<Button-4>", self.volume_up)
             frame.bind("<Button-5>", self.volume_down)
             frame.bind("<MouseWheel>", self.on_mouse_wheel)
@@ -367,10 +366,8 @@ class Player:
             w = getattr(player, "width", None)
             h = getattr(player, "height", None)
             res = f"{w}x{h}" if w and h else "Unknown Res"
-
             fps = getattr(player, "container_fps", None)
             fps_str = f"{fps:.0f} fps" if fps else "Unknown fps"
-
             v_br = getattr(player, "video_bitrate", None) or 0
             a_br = getattr(player, "audio_bitrate", None) or 0
             tb = v_br + a_br
@@ -446,6 +443,7 @@ class Player:
         if self.is_fullscreen:
             self.top_frame.pack_forget()
             self.stats_frame.pack_forget()
+
             if self.sidebar_visible:
                 self.sidebar_frame.pack_forget()
         else:
@@ -485,6 +483,7 @@ class Player:
                 else:
                     self.history_filter_var.set(self.history_filter_placeholder)
                     self.history_filter_entry.config(fg="gray")
+
                 return
             elif focused == self.history_filter_entry:
                 self.root.focus_set()
@@ -502,6 +501,7 @@ class Player:
         if self.country_var.get().strip() == "":
             self.country_var.set(self.country_placeholder)
             self.country_entry.config(fg="gray")
+
         self.save_data()
 
     def on_history_filter_focus_in(self, event: Any) -> None:
@@ -519,14 +519,17 @@ class Player:
             return None
 
         focused = self.root.focus_get()
+
         if focused in (self.country_entry, self.history_filter_entry, self.lang_cb):
             return None
 
         if getattr(event, "char", "") and event.char.isprintable():
             self.history_filter_entry.focus_set()
+
             if self.history_filter_var.get() == self.history_filter_placeholder:
                 self.history_filter_var.set("")
                 self.history_filter_entry.config(fg=data.fg_color)
+
             self.history_filter_entry.insert(tk.END, event.char)
             return "break"
         elif getattr(event, "keysym", "") == "BackSpace":
@@ -584,6 +587,7 @@ class Player:
             return None
 
         self.up_release_job = self.root.after(10, self.cancel_up_scroll)
+
         if self.sidebar_visible:
             return "break"
 
@@ -662,6 +666,7 @@ class Player:
                 ch = self.filtered_history[self.history_active_index]
                 self.root.focus_set()
                 self.root.after(0, self.play_specific, ch)
+
             return "break"
 
         return None
