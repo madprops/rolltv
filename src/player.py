@@ -58,7 +58,7 @@ class Player:
         self.top_frame = tk.Frame(root, bg=data.bg_color)
         self.top_frame.pack(fill=tk.X, pady=10)
         self.info_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.info_frame.pack(side=tk.LEFT, padx=(15, 0))
+        self.info_frame.pack(side=tk.LEFT, padx=(20, 0))
 
         self.name_label = tk.Label(
             self.info_frame,
@@ -70,19 +70,19 @@ class Player:
 
         self.name_label.pack(anchor=tk.W)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.btn_frame.pack(side=tk.RIGHT, padx=(0, 15))
+        self.btn_frame.pack(side=tk.RIGHT, padx=(0, 20))
         self.stats_frame = tk.Frame(root, bg=data.btn_bg)
-        self.stats_frame.pack(fill=tk.X, pady=(0, 10))
+        self.stats_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
         self.stats_label = tk.Label(
             self.stats_frame,
             text="",
-            font=("Monospace", 12),
+            font=("Monospace", 10),
             bg=data.btn_bg,
             fg=data.info_fg,
         )
 
-        self.stats_label.pack(anchor=tk.W, padx=15, pady=2)
+        self.stats_label.pack(anchor=tk.W, padx=20, pady=4)
         self.saved_data = self.load_data()
         country_val = self.saved_data.get("country", self.country_placeholder)
         self.country_var = tk.StringVar(value=country_val)
@@ -104,7 +104,7 @@ class Player:
             font=data.font_ui,
             bg=data.btn_bg,
             fg="gray" if country_val == self.country_placeholder else data.fg_color,
-            insertbackground=data.fg_color,
+            insertbackground=data.accent_color,
             width=18,
             relief=tk.FLAT,
             highlightthickness=0,
@@ -139,7 +139,7 @@ class Player:
             "TCombobox",
             fieldbackground=[("readonly", data.btn_bg)],
             selectbackground=[("readonly", data.btn_bg)],
-            selectforeground=[("readonly", data.fg_color)],
+            selectforeground=[("readonly", data.accent_color)],
             background=[("readonly", data.btn_bg), ("active", data.btn_active)],
             bordercolor=[("readonly", data.btn_border)],
         )
@@ -147,7 +147,7 @@ class Player:
         self.root.option_add("*TCombobox*Listbox.background", data.btn_bg)
         self.root.option_add("*TCombobox*Listbox.foreground", data.fg_color)
         self.root.option_add("*TCombobox*Listbox.selectBackground", data.btn_active)
-        self.root.option_add("*TCombobox*Listbox.selectForeground", data.fg_color)
+        self.root.option_add("*TCombobox*Listbox.selectForeground", data.accent_color)
 
         self.lang_cb = ttk.Combobox(
             self.btn_frame,
@@ -163,54 +163,57 @@ class Player:
 
         self.copy_btn = tk.Button(
             self.btn_frame,
-            text="📋 Copy",
+            text="Copy",
             command=self.copy_link,
             font=data.font_ui,
             bg=data.btn_bg,
             fg=data.fg_color,
             activebackground=data.btn_active,
-            activeforeground=data.fg_color,
+            activeforeground=data.accent_color,
             relief=tk.FLAT,
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10,
+            padx=12,
+            pady=4,
         )
 
         self.copy_btn.pack(side=tk.LEFT, padx=5)
 
         self.paste_btn = tk.Button(
             self.btn_frame,
-            text="📝 Paste",
+            text="Paste",
             command=self.paste_link,
             font=data.font_ui,
             bg=data.btn_bg,
             fg=data.fg_color,
             activebackground=data.btn_active,
-            activeforeground=data.fg_color,
+            activeforeground=data.accent_color,
             relief=tk.FLAT,
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10,
+            padx=12,
+            pady=4,
         )
 
         self.paste_btn.pack(side=tk.LEFT, padx=5)
 
         self.history_btn = tk.Button(
             self.btn_frame,
-            text="🕒 History",
+            text="History",
             command=self.toggle_history,
             font=data.font_ui,
             bg=data.btn_bg,
             fg=data.fg_color,
             activebackground=data.btn_active,
-            activeforeground=data.fg_color,
+            activeforeground=data.accent_color,
             relief=tk.FLAT,
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10,
+            padx=12,
+            pady=4,
         )
 
         self.history_btn.pack(side=tk.LEFT, padx=5)
@@ -223,12 +226,13 @@ class Player:
             bg=data.btn_bg,
             fg=data.fg_color,
             activebackground=data.btn_active,
-            activeforeground=data.fg_color,
+            activeforeground=data.accent_color,
             relief=tk.FLAT,
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10,
+            padx=12,
+            pady=4,
         )
 
         self.play_btn.pack(side=tk.LEFT, padx=5)
@@ -270,7 +274,7 @@ class Player:
             font=data.font_ui,
             bg=data.btn_bg,
             fg="gray",
-            insertbackground=data.fg_color,
+            insertbackground=data.accent_color,
             relief=tk.FLAT,
             highlightthickness=0,
             bd=0,
@@ -495,8 +499,9 @@ class Player:
                 self.sidebar_frame.pack_forget()
         else:
             self.top_frame.pack(fill=tk.X, pady=10, before=self.main_content_frame)
+
             self.stats_frame.pack(
-                fill=tk.X, pady=(0, 10), before=self.main_content_frame
+                side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
             )
 
             if self.sidebar_visible:
@@ -917,7 +922,7 @@ class Player:
         if self.roll_anim_job is not None:
             self.root.after_cancel(self.roll_anim_job)
 
-        self.play_btn.config(highlightbackground=data.fg_color)
+        self.play_btn.config(highlightbackground=data.accent_color)
 
         def restore_style() -> None:
             self.play_btn.config(highlightbackground=data.btn_border)
