@@ -19,7 +19,6 @@ CACHE_EXPIRY_SECONDS = 86400
 HISTORY_FILE = os.path.expanduser(f"~/.config/{info.name}/history.json")
 TITLE = info.full_name
 TUNING_TIMEOUT = 4000
-
 BG_COLOR = "#0f0f17"
 FG_COLOR = "#00ffcc"
 BTN_BG = "#1f1f2e"
@@ -27,6 +26,7 @@ BTN_ACTIVE = "#2a2a3f"
 BTN_BORDER = "#28283d"
 FONT_UI = ("Monospace", 12, "bold")
 ROLL_TEXT = "🎲 Roll TV"
+MAX_HISTORY = 100
 
 def parse_m3u(lines):
     channels = []
@@ -39,13 +39,13 @@ def parse_m3u(lines):
             continue
 
         if line.startswith("#EXTINF"):
-            parts = line.split(',')
+            parts = line.split(",")
 
             if len(parts) > 1:
                 current_name = parts[-1].strip()
         elif not line.startswith("#"):
             if current_name:
-                channels.append({'name': current_name, 'url': line})
+                channels.append({"name": current_name, "url": line})
                 current_name = ""
 
     return channels
@@ -55,19 +55,19 @@ def fetch_channels():
         file_age = time.time() - os.path.getmtime(CACHE_FILE)
 
         if file_age < CACHE_EXPIRY_SECONDS:
-            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
                 lines = f.read().splitlines()
             return parse_m3u(lines)
 
     print(f"Fetching latest playlist from {IPTV_M3U_URL}...")
 
     try:
-        req = urllib.request.Request(IPTV_M3U_URL, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(IPTV_M3U_URL, headers={"User-Agent": "Mozilla/5.0"})
 
         with urllib.request.urlopen(req) as response:
-            raw_data = response.read().decode('utf-8')
+            raw_data = response.read().decode("utf-8")
 
-        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
             f.write(raw_data)
 
         lines = raw_data.splitlines()
@@ -217,7 +217,7 @@ class RandomIPTVPlayer:
         self.history_listbox.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.history_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.history_listbox.bind('<Button-1>', self.on_history_click)
+        self.history_listbox.bind("<Button-1>", self.on_history_click)
         self.frames = []
         self.players = []
 
@@ -233,22 +233,22 @@ class RandomIPTVPlayer:
         self.active_idx = 0
         self.frames[0].tkraise()
 
-        @self.players[0].on_key_press('MBTN_LEFT_DBL')
+        @self.players[0].on_key_press("MBTN_LEFT_DBL")
         def on_dbl_click_0():
             self.root.after(0, self.play_random)
 
-        @self.players[1].on_key_press('MBTN_LEFT_DBL')
+        @self.players[1].on_key_press("MBTN_LEFT_DBL")
         def on_dbl_click_1():
             self.root.after(0, self.play_random)
 
-        @self.players[0].property_observer('playback-time')
+        @self.players[0].property_observer("playback-time")
         def check_ready_0(name, value):
             if value is not None and value > 0.1:
 
                 if self.tuning and self.active_idx != 0:
                     self.root.after(0, self.commit_switch, 0)
 
-        @self.players[1].property_observer('playback-time')
+        @self.players[1].property_observer("playback-time")
         def check_ready_1(name, value):
             if value is not None and value > 0.1:
 
@@ -267,12 +267,12 @@ class RandomIPTVPlayer:
 
         if not os.path.exists(HISTORY_FILE):
             try:
-                with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+                with open(HISTORY_FILE, "w", encoding="utf-8") as f:
                     json.dump([], f)
             except Exception as e:
                 print(f"Failed to create history file: {e}")
         try:
-            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             print(f"Failed to load history: {e}")
@@ -285,7 +285,7 @@ class RandomIPTVPlayer:
             os.makedirs(config_dir)
 
         try:
-            with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
                 json.dump(self.history, f, indent=4)
         except Exception as e:
             print(f"Failed to save history: {e}")
@@ -305,7 +305,7 @@ class RandomIPTVPlayer:
         self.history_listbox.delete(0, tk.END)
 
         for ch in reversed(self.history):
-            self.history_listbox.insert(tk.END, ch['name'])
+            self.history_listbox.insert(tk.END, ch["name"])
 
     def on_history_click(self, event):
         index = self.history_listbox.nearest(event.y)
@@ -339,7 +339,7 @@ class RandomIPTVPlayer:
         if self.tuning:
             return
 
-        if channel['url'] == self.current_url:
+        if channel["url"] == self.current_url:
             return
 
         self.stall_retries = 0
@@ -360,9 +360,9 @@ class RandomIPTVPlayer:
 
             try:
                 req = urllib.request.Request(
-                    candidate['url'],
-                    method='GET',
-                    headers={'User-Agent': 'Mozilla/5.0', 'Range': 'bytes=0-100'}
+                    candidate["url"],
+                    method="GET",
+                    headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-100"}
                 )
 
                 with urllib.request.urlopen(req, timeout=3) as response:
@@ -385,7 +385,7 @@ class RandomIPTVPlayer:
             next_idx = 1
 
         self.tuning_timeout = self.root.after(TUNING_TIMEOUT, self.handle_timeout)
-        self.players[next_idx].play(channel['url'])
+        self.players[next_idx].play(channel["url"])
 
     def handle_timeout(self):
         if self.tuning:
@@ -434,13 +434,13 @@ class RandomIPTVPlayer:
             old_idx = 1
 
         self.players[old_idx].stop()
-        self.current_url = self.pending_channel['url']
-        self.name_label.config(text=self.pending_channel['name'])
+        self.current_url = self.pending_channel["url"]
+        self.name_label.config(text=self.pending_channel["name"])
         self.play_btn.config(state=tk.NORMAL, text=ROLL_TEXT)
-        self.history = [ch for ch in self.history if ch['url'] != self.pending_channel['url']]
+        self.history = [ch for ch in self.history if ch["url"] != self.pending_channel["url"]]
         self.history.append(self.pending_channel)
 
-        if len(self.history) > 100:
+        if len(self.history) > MAX_HISTORY:
             self.history.pop(0)
 
         # Save the updated history to the JSON file
@@ -457,8 +457,8 @@ class RandomIPTVPlayer:
         if self.current_url != "":
             try:
                 subprocess.run(
-                    ['xclip', '-selection', 'clipboard'],
-                    input=self.current_url.encode('utf-8'),
+                    ["xclip", "-selection", "clipboard"],
+                    input=self.current_url.encode("utf-8"),
                     check=True
                 )
             except Exception as e:
@@ -472,11 +472,11 @@ class RandomIPTVPlayer:
                 found_name = "Pasted Stream"
 
                 for ch in self.channels:
-                    if ch['url'] == clip_text:
-                        found_name = ch['name']
+                    if ch["url"] == clip_text:
+                        found_name = ch["name"]
                         break
 
-                channel = {'name': found_name, 'url': clip_text}
+                channel = {"name": found_name, "url": clip_text}
                 self.play_specific(channel)
         except tk.TclError:
             print("Clipboard is empty or inaccessible.")
@@ -490,6 +490,7 @@ class RandomIPTVPlayer:
 
     def volume_down(self, event):
         player = self.players[self.active_idx]
+        print(player)
 
         if player:
             current_vol = player.volume
