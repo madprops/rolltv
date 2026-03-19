@@ -455,11 +455,9 @@ class Player:
             if self.sidebar_visible:
                 self.sidebar_frame.pack_forget()
         else:
-            self.top_frame.pack(
-                    fill=tk.X, pady=10, before=self.main_content_frame
-            )
+            self.top_frame.pack(fill=tk.X, pady=10, before=self.main_content_frame)
             self.stats_frame.pack(
-                    fill=tk.X, pady=(0, 10), before=self.main_content_frame
+                fill=tk.X, pady=(0, 10), before=self.main_content_frame
             )
 
             if self.sidebar_visible:
