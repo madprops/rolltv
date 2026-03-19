@@ -125,11 +125,12 @@ if __name__ == "__main__":
         height=h,
         x=x,
         y=y,
-        frameless=True,
-        easy_drag=False,
-        on_top=True,
+        frameless=False,
+        on_top=False,
         background_color="#1A1B26"
     )
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(script_dir, "icon.png")
     threading.Thread(target=stdin_listener, args=(window,), daemon=True).start()
-    webview.start()
+    webview.start(icon=icon_path)
