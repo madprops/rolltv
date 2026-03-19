@@ -428,6 +428,7 @@ class Player:
         )
 
         self.sidebar_listbox.bind("<Button-1>", self.on_sidebar_click)
+        self.current_volume = 100
         self.frames = []
         self.players = []
 
@@ -445,6 +446,7 @@ class Player:
                 hwdec="auto",
                 input_vo_keyboard=True,
             )
+            player.volume = self.current_volume
 
             self.frames.append(frame)
             self.players.append(player)
@@ -859,7 +861,7 @@ class Player:
             if len(self.sidebar_items) > 0:
                 ch = self.sidebar_items[self.sidebar_active_index]
                 self.root.focus_set()
-                self.root.after(0, self.play_specific, ch)
+                self.root.after(0, self.play_specific, ch, True)
 
             return "break"
 
@@ -1165,7 +1167,7 @@ class Player:
                 self.sidebar_active_index = index
                 self.draw_sidebar_selection()
                 ch = self.sidebar_items[index]
-                self.root.after(0, self.play_specific, ch)
+                self.root.after(0, self.play_specific, ch, True)
             except ValueError:
                 pass
 
@@ -1175,6 +1177,7 @@ class Player:
         if len(self.channels) == 0:
             return
 
+        self.play_tuning_sound()
         self.animate_roll_button()
 
         if self.tuning:
@@ -1203,7 +1206,10 @@ class Player:
 
         self.roll_anim_job = self.root.after(500, restore_style)
 
-    def play_specific(self, channel: dict[str, Any]) -> None:
+    def play_specific(self, channel: dict[str, Any], manual: bool = False) -> None:
+        if manual:
+            self.play_tuning_sound()
+
         if self.tuning:
             self.cancel_tuning()
 
@@ -1551,7 +1557,7 @@ class Player:
                         break
 
                 channel = {"name": found_name, "url": clip_text}
-                self.play_specific(channel)
+                self.play_specific(channel, True)
         except tk.TclError:
             utils.print("Clipboard is empty or inaccessible.")
 
@@ -1566,18 +1572,28 @@ class Player:
 
         if player:
             current_vol = player.volume
+
             if current_vol is not None:
-                player.volume = min(current_vol + 5, 100)
-                player.show_text(f"Volume: {int(player.volume)}%")
+                self.current_volume = min(current_vol + 5, 100)
+
+                for p in self.players:
+                    p.volume = self.current_volume
+
+                player.show_text(f"Volume: {int(self.current_volume)}%")
 
     def volume_down(self, event: Any = None) -> None:
         player = self.players[self.active_idx]
 
         if player:
             current_vol = player.volume
+
             if current_vol is not None:
-                player.volume = max(current_vol - 5, 0)
-                player.show_text(f"Volume: {int(player.volume)}%")
+                self.current_volume = max(current_vol - 5, 0)
+
+                for p in self.players:
+                    p.volume = self.current_volume
+
+                player.show_text(f"Volume: {int(self.current_volume)}%")
 
     def toggle_pause(self, event: Any = None) -> None:
         player = self.players[self.active_idx]
@@ -1647,3 +1663,19 @@ class Player:
         self.root.attributes("-topmost", False)
         self.root.lift()
         self.root.focus_force()
+
+    def play_tuning_sound(self) -> None:
+        def run() -> None:
+            try:
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                sound_path = os.path.join(script_dir, "tuning.mp3")
+                if os.path.exists(sound_path):
+                    p = mpv.MPV(video="no")
+                    p.volume = self.current_volume
+                    p.play(sound_path)
+                    p.wait_for_playback()
+                    p.terminate()
+            except Exception as e:
+                utils.print(f"Failed to play tuning sound: {e}")
+
+        threading.Thread(target=run, daemon=True).start()
