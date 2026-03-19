@@ -478,8 +478,9 @@ class Player:
 
         self.msg_timeout_id = None
         self.name_label.config(text=self.current_channel_name)
+
         if getattr(self, "current_flag_img", None):
-            self.name_label.config(image=self.current_flag_img, compound=tk.RIGHT)
+            self.name_label.config(image=self.current_flag_img, compound=tk.RIGHT)  # type: ignore
 
     def update_status_loop(self) -> None:
         self.update_status()
@@ -1065,7 +1066,7 @@ class Player:
         self.sidebar_items = []
 
         if not hasattr(self, "flag_images"):
-            self.flag_images = {}
+            self.flag_images: dict[str, tk.PhotoImage] = {}
 
         active_var = (
             self.history_filter_var
@@ -1683,7 +1684,7 @@ class Player:
         self.root.lift()
         self.root.focus_force()
 
-    def main_menu_item(self, text, command):
+    def main_menu_item(self, text: str, command: Any) -> None:
         btn = tk.Button(
             self.menu_sidebar_frame,
             text=text,

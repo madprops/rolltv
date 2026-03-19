@@ -6,11 +6,11 @@ import platform
 
 
 class Sound:
-    def create(self):
+    def create(self) -> None:
         self.tuning_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
         self.generate_tuning_sound(self.tuning_wav.name)
 
-    def generate_tuning_sound(self, filename):
+    def generate_tuning_sound(self, filename: str) -> None:
         duration = 0.2
         sample_rate = 44100
         num_samples = int(sample_rate * duration)
@@ -36,14 +36,15 @@ class Sound:
                 sample = int(value * envelope * 32767 * volume_reduction)
                 wav_file.writeframesraw(struct.pack("<h", sample))
 
-    def play_tuning_sound(self):
+    def play_tuning_sound(self) -> None:
         system = platform.system()
 
         if system == "Windows":
             import winsound
 
-            winsound.PlaySound(
-                self.tuning_wav.name, winsound.SND_FILENAME | winsound.SND_ASYNC
+            winsound.PlaySound(  # type: ignore
+                self.tuning_wav.name,
+                winsound.SND_FILENAME | winsound.SND_ASYNC,  # type: ignore
             )
 
         if system == "Darwin":
@@ -53,8 +54,12 @@ class Sound:
 
         if system == "Linux":
             import subprocess
+            import shutil
 
-            subprocess.Popen(["aplay", "-q", self.tuning_wav.name])
+            if shutil.which("paplay"):
+                subprocess.Popen(["paplay", self.tuning_wav.name])
+            else:
+                subprocess.Popen(["aplay", "-q", self.tuning_wav.name])
 
 
 sound = Sound()
