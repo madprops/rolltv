@@ -874,7 +874,10 @@ class Player:
                             text_chunk = chunk.decode("utf-8", errors="ignore")
 
                             if "#EXTM3U" in text_chunk:
-                                if "#EXTINF" not in text_chunk and "#EXT-X" not in text_chunk:
+                                if (
+                                    "#EXTINF" not in text_chunk
+                                    and "#EXT-X" not in text_chunk
+                                ):
                                     continue
 
                             working_channel = candidate
