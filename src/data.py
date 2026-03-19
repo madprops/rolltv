@@ -25,6 +25,7 @@ class Data:
         self.list_select_bg = "#444466"
         self.btn_border = "#28283d"
         self.font_ui = ("Monospace", 12, "bold")
+        self.name_font = ("sans-serif", 12, "bold")
         self.roll_text = "🎲 Roll"
         self.any_language = "Language"
         self.max_history = 1000

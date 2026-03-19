@@ -63,7 +63,7 @@ class Player:
         self.name_label = tk.Label(
             self.info_frame,
             text=self.current_channel_name,
-            font=data.font_ui,
+            font=data.name_font,
             bg=data.bg_color,
             fg=data.fg_color,
         )
@@ -339,7 +339,7 @@ class Player:
 
         self.update_stats_loop()
 
-    def show_info_message(self, text: str) -> None:
+    def show_name_message(self, text: str) -> None:
         self.name_label.config(text=text)
 
         if self.msg_timeout_id is not None:
@@ -349,7 +349,7 @@ class Player:
             data.info_restore_delay, self.restore_channel_name
         )
 
-    def show_status_message(self, text: str) -> None:
+    def set_stats(self, text: str) -> None:
         self.stats_label.config(text=text)
 
     def restore_channel_name(self) -> None:
@@ -365,7 +365,7 @@ class Player:
 
     def update_stats(self) -> None:
         if self.tuning:
-            self.show_info_message("Tuning...")
+            self.show_name_message("Tuning...")
             return
 
         player = self.players[self.active_idx]
@@ -374,18 +374,21 @@ class Player:
             w = getattr(player, "width", None)
             h = getattr(player, "height", None)
             res = f"{w}x{h}" if w and h else "Unknown Res"
-            fps = getattr(player, "container_fps", None)
+            fps = getattr(player, "container_fps", getattr(player, "estimated_vf_fps", None))
             fps_str = f"{fps:.0f} fps" if fps else "Unknown fps"
             v_br = getattr(player, "video_bitrate", None) or 0
             a_br = getattr(player, "audio_bitrate", None) or 0
             tb = v_br + a_br
 
+            def fmt_br(b: float) -> str:
+                if b >= 1000000:
+                    return f"{b / 1000000:.1f}M"
+                elif b > 0:
+                    return f"{b / 1000:.0f}K"
+                return "0"
+
             if tb > 0:
-                br_str = (
-                    f"{tb / 1000000:.1f} Mbps"
-                    if tb > 1000000
-                    else f"{tb / 1000:.0f} kbps"
-                )
+                br_str = f"{fmt_br(tb)}bps (V:{fmt_br(v_br)} A:{fmt_br(a_br)})"
             else:
                 br_str = "Unknown bitrate"
 
@@ -403,11 +406,24 @@ class Player:
 
             vc = vc.upper() if isinstance(vc, str) else vc
             ac = ac.upper() if isinstance(ac, str) else ac
+            audio_params = getattr(player, "audio_params", None)
+
+            if isinstance(audio_params, dict) and "samplerate" in audio_params:
+                sr = audio_params["samplerate"]
+                ac += f" ({sr/1000:.1f}kHz)"
+
             codecs = f"{vc} / {ac}"
-            stats = f"{res} | {fps_str} | {br_str} | {codecs}"
-            self.show_status_message(stats)
+            cache = getattr(player, "demuxer_cache_duration", None)
+            cache_str = f"Buf: {cache:.1f}s" if cache is not None else "Buf: 0.0s"
+            d_drops = getattr(player, "drop_frame_count", None) or 0
+            vo_drops = getattr(player, "vo_drop_frame_count", None) or 0
+            drops_str = f"Drops: {d_drops + vo_drops}"
+            hwdec = getattr(player, "hwdec_current", None)
+            hw_str = f"HW: {hwdec.upper()}" if hwdec and hwdec != "no" else "SW"
+            stats = f"{res} | {fps_str} | {br_str} | {codecs} | {hw_str} | {cache_str} | {drops_str}"
+            self.set_stats(stats)
         else:
-            self.show_status_message("")
+            self.set_stats("")
 
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
@@ -917,7 +933,7 @@ class Player:
         next_idx = 1 if self.active_idx == 0 else 0
         self.player_search_ids[next_idx] = -1
         self.players[next_idx].stop()
-        self.show_info_message("Tuning cancelled.")
+        self.show_name_message("Tuning cancelled.")
 
     def find_live_stream(self, my_search_id: int) -> None:
         working_channel = None
@@ -957,7 +973,7 @@ class Player:
             self.root.after(0, self.reset_button)
 
             self.root.after(
-                0, lambda: self.show_info_message("No channels for this filter")
+                0, lambda: self.show_name_message("No channels for this filter")
             )
 
             return
@@ -1018,7 +1034,7 @@ class Player:
             self.root.after(0, self.reset_button)
 
             self.root.after(
-                0, lambda: self.show_info_message("Could not find a working stream.")
+                0, lambda: self.show_name_message("Could not find a working stream.")
             )
 
     def prepare_switch(self, channel: dict[str, Any], search_id: int) -> None:
@@ -1048,11 +1064,11 @@ class Player:
         if self.is_roll or self.stall_retries < data.max_retries:
             if self.is_roll:
                 self.stall_retries = 0
-                self.show_info_message("Stalled. Trying a different stream...")
+                self.show_name_message("Stalled. Trying a different stream...")
             else:
                 self.stall_retries += 1
 
-                self.show_info_message(
+                self.show_name_message(
                     f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
                 )
 
@@ -1085,7 +1101,7 @@ class Player:
             self.player_search_ids[next_idx] = -1
             self.players[next_idx].stop()
 
-            self.show_info_message(
+            self.show_name_message(
                 f"Stream stalled {data.max_retries} times. Roll again."
             )
 
