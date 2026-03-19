@@ -74,7 +74,7 @@ class Player:
             cursor="hand2",
         )
 
-        self.menu_btn.pack(side=tk.LEFT, padx=(20, 0))
+        self.menu_btn.pack(side=tk.LEFT, padx=(20, 5))
         self.menu_btn.bind("<Button-1>", self.toggle_menu)
         self.info_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.info_frame.pack(side=tk.LEFT, padx=(10, 0))
@@ -262,7 +262,7 @@ class Player:
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
 
         self.menu_sidebar_frame = tk.Frame(
-            self.main_content_frame, bg=data.btn_bg, width=200
+            self.main_content_frame, bg=data.btn_bg, width=200, bd=0, highlightthickness=0
         )
 
         self.menu_sidebar_frame.pack_propagate(False)
@@ -328,7 +328,7 @@ class Player:
         self.video_container.bind("<Double-Button-1>", self.toggle_maximize)
 
         self.sidebar_frame = tk.Frame(
-            self.main_content_frame, bg=data.btn_bg, width=300
+            self.main_content_frame, bg=data.btn_bg, width=300, bd=0, highlightthickness=0
         )
 
         self.sidebar_frame.pack_propagate(False)
@@ -341,7 +341,7 @@ class Player:
             bg=data.btn_bg,
             highlightbackground=data.btn_border,
             highlightcolor=data.btn_border,
-            highlightthickness=1,
+            highlightthickness=0,
             bd=0,
         )
 
@@ -369,6 +369,9 @@ class Player:
             foreground=data.fg_color,
             fieldbackground=data.btn_bg,
             borderwidth=0,
+            bordercolor=data.btn_bg,
+            lightcolor=data.btn_bg,
+            darkcolor=data.btn_bg,
             font=data.font_ui,
             rowheight=24,
         )
@@ -387,7 +390,12 @@ class Player:
         )
 
         self.scrollbar = tk.Scrollbar(
-            self.sidebar_frame, command=self.history_listbox.yview, bg=data.bg_color
+            self.sidebar_frame,
+            command=self.history_listbox.yview,
+            bg=data.bg_color,
+            bd=0,
+            highlightthickness=0,
+            relief=tk.FLAT,
         )
 
         self.history_listbox.config(yscrollcommand=self.scrollbar.set)
@@ -1022,9 +1030,9 @@ class Player:
                         threading.Thread(target=self.fetch_flag_only, args=(c_code,), daemon=True).start()
 
                 if img:
-                    self.history_listbox.insert("", tk.END, text=f" {ch['name']}", image=img)
+                    self.history_listbox.insert("", tk.END, text=f"   {ch['name']}", image=img)
                 else:
-                    self.history_listbox.insert("", tk.END, text=f" {ch['name']}")
+                    self.history_listbox.insert("", tk.END, text=f"   {ch['name']}")
 
         new_active_index = 0
 
@@ -1342,7 +1350,7 @@ class Player:
         c_name = self.pending_channel.get("country_name", "")
         self.current_country = c_name.title() if c_name else "Unknown"
         name = self.pending_channel.get("name", "Unknown")
-        self.current_channel_name = f"{name} "
+        self.current_channel_name = f"{name}   "
         c_code = self.pending_channel.get("country_code", "")
 
         if isinstance(c_code, str) and len(c_code) == 2:
