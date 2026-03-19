@@ -381,11 +381,10 @@ class Player:
             else:
                 br_str = "Unknown bitrate"
 
-            vc = getattr(player, "video_codec", None) or "No Video"
-            ac = getattr(player, "audio_codec", None) or "No Audio"
+            vc = getattr(player, "video_format", getattr(player, "video_codec", None)) or "No Video"
+            ac = getattr(player, "audio_codec_name", getattr(player, "audio_codec", None)) or "No Audio"
             vc = vc.upper() if isinstance(vc, str) else vc
             ac = ac.upper() if isinstance(ac, str) else ac
-            ac = ac.replace("(ADVANCED AUDIO CODING)", "").strip()
             codecs = f"{vc} / {ac}"
             stats = f"{res} | {fps_str} | {br_str} | {codecs}"
             self.stats_label.config(text=stats)
