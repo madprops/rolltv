@@ -82,14 +82,19 @@ class Tuner:
         if sel_lang != data.any_language:
             target_code = self.player.lang_map_rev.get(sel_lang, sel_lang)
             valid_channels = [
-                ch for ch in valid_channels if target_code in (ch.get("languages") or [])
+                ch
+                for ch in valid_channels
+                if target_code in (ch.get("languages") or [])
             ]
 
         target_country = self.player.country_var.get().strip().lower()
 
-        if (target_country != "") and (target_country != self.player.country_placeholder.lower()):
+        if (target_country != "") and (
+            target_country != self.player.country_placeholder.lower()
+        ):
             valid_channels = [
-                ch for ch in valid_channels
+                ch
+                for ch in valid_channels
                 if target_country == (ch.get("country_code") or "").lower()
                 or target_country in (ch.get("country_name") or "").lower()
             ]
@@ -131,7 +136,9 @@ class Tuner:
                 )
 
                 with urllib.request.urlopen(req, timeout=data.url_timeout) as response:
-                    if not self.player.tuning or (my_search_id != self.player.search_id):
+                    if not self.player.tuning or (
+                        my_search_id != self.player.search_id
+                    ):
                         return
 
                     if response.status in [200, 206, 301, 302]:
@@ -141,7 +148,10 @@ class Tuner:
                             text_chunk = chunk.decode("utf-8", errors="ignore")
 
                             if "#EXTM3U" in text_chunk:
-                                if "#EXTINF" not in text_chunk and "#EXT-X" not in text_chunk:
+                                if (
+                                    "#EXTINF" not in text_chunk
+                                    and "#EXT-X" not in text_chunk
+                                ):
                                     continue
 
                             working_channel = candidate
@@ -153,12 +163,17 @@ class Tuner:
             return
 
         if working_channel is not None:
-            self.player.root.after(0, self.prepare_switch, working_channel, my_search_id)
+            self.player.root.after(
+                0, self.prepare_switch, working_channel, my_search_id
+            )
         else:
             self.player.root.after(0, self.reset_button)
 
             self.player.root.after(
-                0, lambda: self.player.show_name_message("Could not find a working stream.")
+                0,
+                lambda: self.player.show_name_message(
+                    "Could not find a working stream."
+                ),
             )
 
     def prepare_switch(self, channel: dict[str, Any], search_id: int) -> None:
@@ -184,7 +199,9 @@ class Tuner:
             return
 
         if self.player.is_roll or self.player.stall_retries < data.max_retries:
-            self.player.stall_retries = 0 if self.player.is_roll else self.player.stall_retries + 1
+            self.player.stall_retries = (
+                0 if self.player.is_roll else self.player.stall_retries + 1
+            )
             next_idx = 1 if self.player.active_idx == 0 else 0
             self.player.player_search_ids[next_idx] = -1
             self.player.players[next_idx].stop()
@@ -192,7 +209,9 @@ class Tuner:
             new_search_id = self.player.search_id
 
             if self.player.is_roll:
-                threading.Thread(target=self.find_live_stream, args=(new_search_id,), daemon=True).start()
+                threading.Thread(
+                    target=self.find_live_stream, args=(new_search_id,), daemon=True
+                ).start()
             elif self.player.pending_channel:
                 self.prepare_switch(self.player.pending_channel, new_search_id)
         else:
@@ -200,10 +219,16 @@ class Tuner:
             next_idx = 1 if self.player.active_idx == 0 else 0
             self.player.player_search_ids[next_idx] = -1
             self.player.players[next_idx].stop()
-            self.player.show_name_message(f"Stream stalled {data.max_retries} times. Roll again.")
+            self.player.show_name_message(
+                f"Stream stalled {data.max_retries} times. Roll again."
+            )
 
     def commit_switch_if_valid(self, ready_idx: int, search_id: int) -> None:
-        if self.player.tuning and search_id == self.player.search_id and self.player.active_idx != ready_idx:
+        if (
+            self.player.tuning
+            and search_id == self.player.search_id
+            and self.player.active_idx != ready_idx
+        ):
             self.commit_switch(ready_idx)
 
     def commit_switch(self, ready_idx: int) -> None:
@@ -227,17 +252,27 @@ class Tuner:
         self.player.current_url = self.player.pending_channel["url"]
         c_name = self.player.pending_channel.get("country_name", "")
         self.player.current_country = c_name.title() if c_name else "Unknown"
-        self.player.current_channel_name = f"{self.player.pending_channel.get('name', 'Unknown')}   "
+        self.player.current_channel_name = (
+            f"{self.player.pending_channel.get('name', 'Unknown')}   "
+        )
         c_code = self.player.pending_channel.get("country_code", "")
 
         if isinstance(c_code, str) and len(c_code) == 2:
             c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
-            threading.Thread(target=self.player.flags.load_or_fetch, args=(c_code, self.player.current_channel_name), daemon=True).start()
+            threading.Thread(
+                target=self.player.flags.load_or_fetch,
+                args=(c_code, self.player.current_channel_name),
+                daemon=True,
+            ).start()
         else:
             self.player.flags.clear()
 
         self.player.restore_channel_name()
-        self.player.history = [ch for ch in self.player.history if ch["url"] != self.player.pending_channel["url"]]
+        self.player.history = [
+            ch
+            for ch in self.player.history
+            if ch["url"] != self.player.pending_channel["url"]
+        ]
         self.player.history.append(self.player.pending_channel)
 
         if len(self.player.history) > data.max_history:

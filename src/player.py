@@ -10,7 +10,6 @@ from utils import utils
 from data import data
 from info import info
 from args import args
-from sound import sound
 from sidebar import Sidebar
 from topbar import Topbar
 from store import store
@@ -689,7 +688,9 @@ class Player:
                 if os.path.exists(flag_path):
                     if c_code not in self.flags.flag_images:
                         try:
-                            self.flags.flag_images[c_code] = tk.PhotoImage(file=flag_path)
+                            self.flags.flag_images[c_code] = tk.PhotoImage(
+                                file=flag_path
+                            )
                         except Exception:
                             pass
                     img = self.flags.flag_images.get(c_code)

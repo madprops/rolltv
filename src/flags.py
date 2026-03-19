@@ -39,7 +39,9 @@ class Flags:
             return
         try:
             self.player.current_flag_img = tk.PhotoImage(file=flag_path)
-            self.player.name_label.config(image=self.player.current_flag_img, compound=tk.RIGHT)
+            self.player.name_label.config(
+                image=self.player.current_flag_img, compound=tk.RIGHT
+            )
         except Exception:
             self.clear()
 
@@ -67,6 +69,7 @@ class Flags:
                                 return
                             if self.player.active_sidebar:
                                 self.player.update_sidebar()
+
                         self.player.root.after(0, update_images)
             except Exception:
                 pass

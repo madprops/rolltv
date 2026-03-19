@@ -48,7 +48,9 @@ class Status:
             res = f"{w}x{h}" if w and h else "Unknown Res"
 
             fps = getattr(
-                player_mpv, "container_fps", getattr(player_mpv, "estimated_vf_fps", None)
+                player_mpv,
+                "container_fps",
+                getattr(player_mpv, "estimated_vf_fps", None),
             )
 
             fps_str = f"{fps:.0f} fps" if fps else "Unknown fps"
@@ -63,9 +65,25 @@ class Status:
                     return f"{b / 1000:.0f}K"
                 return "0"
 
-            br_str = f"{fmt_br(tb)}bps (V:{fmt_br(v_br)} A:{fmt_br(a_br)})" if tb > 0 else "Unknown bitrate"
-            vc = getattr(player_mpv, "video_format", getattr(player_mpv, "video_codec", None)) or "No Video"
-            ac = getattr(player_mpv, "audio_codec_name", getattr(player_mpv, "audio_codec", None)) or "No Audio"
+            br_str = (
+                f"{fmt_br(tb)}bps (V:{fmt_br(v_br)} A:{fmt_br(a_br)})"
+                if tb > 0
+                else "Unknown bitrate"
+            )
+            vc = (
+                getattr(
+                    player_mpv, "video_format", getattr(player_mpv, "video_codec", None)
+                )
+                or "No Video"
+            )
+            ac = (
+                getattr(
+                    player_mpv,
+                    "audio_codec_name",
+                    getattr(player_mpv, "audio_codec", None),
+                )
+                or "No Audio"
+            )
             vc = vc.upper() if isinstance(vc, str) else vc
             ac = ac.upper() if isinstance(ac, str) else ac
             audio_params = getattr(player_mpv, "audio_params", None)
@@ -74,7 +92,9 @@ class Status:
                 ac += f" ({audio_params['samplerate'] / 1000:.1f}kHz)"
 
             cache = getattr(player_mpv, "demuxer_cache_duration", None)
-            drops = (getattr(player_mpv, "drop_frame_count", None) or 0) + (getattr(player_mpv, "vo_drop_frame_count", None) or 0)
+            drops = (getattr(player_mpv, "drop_frame_count", None) or 0) + (
+                getattr(player_mpv, "vo_drop_frame_count", None) or 0
+            )
             hwdec = getattr(player_mpv, "hwdec_current", None)
             status_text = f"{self.player.current_country} | {res} | {fps_str} | {br_str} | {vc} / {ac} | {'HW: ' + hwdec.upper() if hwdec and hwdec != 'no' else 'SW'} | Buf: {cache:.1f}s | Drops: {drops}"
             self.set_text(status_text)
