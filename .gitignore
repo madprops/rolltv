@@ -1,0 +1,6 @@
+*.mp4
+output/*
+render/*
+*.pyc
+hugegull.egg-info/*
+build/*
