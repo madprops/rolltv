@@ -653,10 +653,7 @@ class Player:
 
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
-
-        self.show_message(
-            "Sound FX Enabled" if args.sound_fx else "Sound FX Disabled"
-        )
+        self.show_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
 
     def exit_app(self) -> None:
         self.root.destroy()

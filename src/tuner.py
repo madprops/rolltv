@@ -174,9 +174,7 @@ class Tuner:
 
             self.player.root.after(
                 0,
-                lambda: self.player.show_message(
-                    "Could not find a working stream."
-                ),
+                lambda: self.player.show_message("Could not find a working stream."),
             )
 
     def prepare_switch(self, channel: dict[str, Any], search_id: int) -> None:
