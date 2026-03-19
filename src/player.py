@@ -125,6 +125,7 @@ class Player:
                 hwdec="auto",
                 input_vo_keyboard=True,
             )
+
             player.volume = self.current_volume
 
             self.frames.append(frame)
@@ -349,6 +350,7 @@ class Player:
                 if self.active_sidebar == "history"
                 else self.country_filter_var
             )
+
             current_filter = active_var.get()
 
             if (
@@ -387,6 +389,7 @@ class Player:
             if self.active_sidebar == "history"
             else self.country_filter_var
         )
+
         if active_var.get() == self.sidebar_filter_placeholder:
             active_var.set("")
             self.sidebar_filter_entry.config(fg=data.fg_color)
@@ -397,6 +400,7 @@ class Player:
             if self.active_sidebar == "history"
             else self.country_filter_var
         )
+
         if active_var.get().strip() == "":
             active_var.set(self.sidebar_filter_placeholder)
             self.sidebar_filter_entry.config(fg="gray")
@@ -418,6 +422,7 @@ class Player:
                 if self.active_sidebar == "history"
                 else self.country_filter_var
             )
+
             if active_var.get() == self.sidebar_filter_placeholder:
                 active_var.set("")
                 self.sidebar_filter_entry.config(fg=data.fg_color)
@@ -432,6 +437,7 @@ class Player:
                 if self.active_sidebar == "history"
                 else self.country_filter_var
             )
+
             if active_var.get() != self.sidebar_filter_placeholder:
                 current = self.sidebar_filter_entry.get()
 
@@ -755,6 +761,7 @@ class Player:
 
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
+
         self.show_name_message(
             "Sound FX Enabled" if args.sound_fx else "Sound FX Disabled"
         )
@@ -814,6 +821,7 @@ class Player:
 
                 if country_match:
                     name_match = filter_text in ch["name"].lower()
+
                     country_name_match = (
                         filter_text in ch.get("country_name", "").lower()
                     )
@@ -827,6 +835,7 @@ class Player:
 
             if isinstance(c_code, str) and len(c_code) == 2:
                 c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
+
                 flag_path = os.path.expanduser(
                     f"~/.config/{info.name}/flags/{c_code}.png"
                 )
@@ -978,6 +987,7 @@ class Player:
 
         if sel_lang != data.any_language:
             target_code = self.lang_map_rev.get(sel_lang, sel_lang)
+
             valid_channels = [
                 ch
                 for ch in valid_channels
@@ -1177,6 +1187,7 @@ class Player:
 
         if isinstance(c_code, str) and len(c_code) == 2:
             c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
+
             threading.Thread(
                 target=self.load_or_fetch_flag,
                 args=(c_code, self.current_channel_name),
@@ -1209,6 +1220,7 @@ class Player:
             try:
                 url = f"https://flagcdn.com/24x18/{c_code}.png"
                 req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
                 with urllib.request.urlopen(req, timeout=3) as response:
                     if response.status == 200:
                         with open(flag_path, "wb") as f:
@@ -1241,6 +1253,7 @@ class Player:
             try:
                 url = f"https://flagcdn.com/24x18/{c_code}.png"
                 req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
                 with urllib.request.urlopen(req, timeout=3) as response:
                     if response.status == 200:
                         with open(flag_path, "wb") as f:
