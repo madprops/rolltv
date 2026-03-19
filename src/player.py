@@ -26,6 +26,7 @@ class Player:
         self.msg_timeout_id: str | None = None
         self.history = self.load_history()
         self.filtered_history: list[dict[str, Any]] = []
+        self.history_active_index = 0
         self.sidebar_visible = False
         self.stall_retries = 0
         self.country_placeholder = "Country"
@@ -233,7 +234,6 @@ class Player:
         self.history_filter_entry.pack(fill=tk.X, padx=10, pady=(10, 0))
         self.history_filter_entry.bind("<FocusIn>", self.on_history_filter_focus_in)
         self.history_filter_entry.bind("<FocusOut>", self.on_history_filter_focus_out)
-        self.history_filter_entry.bind("<Return>", self.on_history_filter_return)
 
         self.history_listbox = tk.Listbox(
             self.sidebar_frame,
@@ -242,7 +242,7 @@ class Player:
             font=data.font_ui,
             relief=tk.FLAT,
             highlightthickness=0,
-            selectbackground=data.btn_bg,
+            selectbackground=data.btn_active,
             selectforeground=data.fg_color,
             activestyle="none",
         )
@@ -285,6 +285,9 @@ class Player:
         self.frames[0].tkraise()
         self.is_fullscreen = False
         self.root.bind("<Escape>", self.exit_fullscreen)
+        self.root.bind("<Up>", self.on_up_arrow)
+        self.root.bind("<Down>", self.on_down_arrow)
+        self.root.bind("<Return>", self.on_return_key)
 
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
@@ -379,16 +382,35 @@ class Player:
             self.history_filter_var.set(self.history_filter_placeholder)
             self.history_filter_entry.config(fg="gray")
 
-    def on_history_filter_return(self, event: Any) -> str:
-        filter_text = self.history_filter_var.get().strip()
+    def on_up_arrow(self, event: Any) -> str | None:
+        if self.sidebar_visible:
+            if self.history_active_index > 0:
+                self.history_active_index -= 1
+                self.draw_history_selection()
+            return "break"
+        return None
 
-        if filter_text != "" and filter_text != self.history_filter_placeholder:
+    def on_down_arrow(self, event: Any) -> str | None:
+        if self.sidebar_visible:
+            if self.history_active_index < len(self.filtered_history) - 1:
+                self.history_active_index += 1
+                self.draw_history_selection()
+            return "break"
+        return None
+
+    def on_return_key(self, event: Any) -> str | None:
+        focused = self.root.focus_get()
+        if focused == self.country_entry:
+            return None
+
+        if self.sidebar_visible:
             if len(self.filtered_history) > 0:
+                ch = self.filtered_history[self.history_active_index]
                 self.root.focus_set()
-                self.root.after(0, self.play_specific, self.filtered_history[0])
+                self.root.after(0, self.play_specific, ch)
                 self.hide_history()
-
-        return "break"
+            return "break"
+        return None
 
     def on_country_return(self, event: Any) -> str:
         self.root.focus_set()
@@ -524,6 +546,19 @@ class Player:
                 self.filtered_history.append(ch)
                 self.history_listbox.insert(tk.END, ch["name"])
 
+        self.history_active_index = 0
+        self.draw_history_selection()
+
+    def draw_history_selection(self) -> None:
+        self.history_listbox.selection_clear(0, tk.END)
+        if len(self.filtered_history) > 0:
+            if self.history_active_index >= len(self.filtered_history):
+                self.history_active_index = len(self.filtered_history) - 1
+            if self.history_active_index < 0:
+                self.history_active_index = 0
+            self.history_listbox.selection_set(self.history_active_index)
+            self.history_listbox.see(self.history_active_index)
+
     def on_history_click(self, event: Any) -> str:
         index = self.history_listbox.nearest(event.y)  # type: ignore
 
@@ -533,6 +568,8 @@ class Player:
             if bbox:
                 if bbox[1] <= event.y <= bbox[1] + bbox[3]:
                     if index < len(self.filtered_history):
+                        self.history_active_index = index
+                        self.draw_history_selection()
                         ch = self.filtered_history[index]
                         self.root.after(0, self.play_specific, ch)
 
