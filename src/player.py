@@ -27,6 +27,14 @@ class Player:
         self.history = self.load_history()
         self.filtered_history: list[dict[str, Any]] = []
         self.history_active_index = 0
+        self.history_scroll_delay = 200
+        self.history_scroll_interval = 50
+        self.up_job: str | None = None
+        self.down_job: str | None = None
+        self.up_release_job: str | None = None
+        self.down_release_job: str | None = None
+        self.is_up_pressed = False
+        self.is_down_pressed = False
         self.sidebar_visible = False
         self.stall_retries = 0
         self.country_placeholder = "Country"
@@ -285,8 +293,10 @@ class Player:
         self.frames[0].tkraise()
         self.is_fullscreen = False
         self.root.bind("<Escape>", self.exit_fullscreen)
-        self.root.bind("<Up>", self.on_up_arrow)
-        self.root.bind("<Down>", self.on_down_arrow)
+        self.root.bind("<KeyPress-Up>", self.on_up_press)
+        self.root.bind("<KeyRelease-Up>", self.on_up_release)
+        self.root.bind("<KeyPress-Down>", self.on_down_press)
+        self.root.bind("<KeyRelease-Down>", self.on_down_release)
         self.root.bind("<Return>", self.on_return_key)
         self.root.bind("<Key>", self.on_global_key_press)
 
@@ -342,11 +352,11 @@ class Player:
 
         @player.on_key_press("UP")  # type: ignore
         def _on_up() -> None:
-            self.root.after(0, lambda: self.on_up_arrow(None))
+            self.root.after(0, self.move_up)
 
         @player.on_key_press("DOWN")  # type: ignore
         def _on_down() -> None:
-            self.root.after(0, lambda: self.on_down_arrow(None))
+            self.root.after(0, self.move_down)
 
         @player.on_key_press("ENTER")  # type: ignore
         def _on_enter() -> None:
@@ -424,32 +434,99 @@ class Player:
 
         return None
 
-    def on_up_arrow(self, event: Any) -> str | None:
-        if self.root.focus_get() == self.lang_cb:
-            return None
-
+    def move_up(self) -> None:
         if self.sidebar_visible:
             if self.history_active_index > 0:
                 self.history_active_index -= 1
                 self.draw_history_selection()
 
-            return "break"
-        return None
-
-    def on_down_arrow(self, event: Any) -> str | None:
-        if self.root.focus_get() == self.lang_cb:
-            return None
-
+    def move_down(self) -> None:
         if self.sidebar_visible:
             if self.history_active_index < len(self.filtered_history) - 1:
                 self.history_active_index += 1
                 self.draw_history_selection()
 
+    def on_up_press(self, event: Any) -> str | None:
+        if self.root.focus_get() == self.lang_cb:
+            return None
+
+        if self.up_release_job is not None:
+            self.root.after_cancel(self.up_release_job)
+            self.up_release_job = None
+
+        if not self.is_up_pressed:
+            self.is_up_pressed = True
+            self.move_up()
+            self.up_job = self.root.after(self.history_scroll_delay, self.scroll_up_fast)
+
+        if self.sidebar_visible:
             return "break"
+
         return None
+
+    def on_up_release(self, event: Any) -> str | None:
+        if self.root.focus_get() == self.lang_cb:
+            return None
+
+        self.up_release_job = self.root.after(10, self.cancel_up_scroll)
+        if self.sidebar_visible:
+            return "break"
+
+        return None
+
+    def cancel_up_scroll(self) -> None:
+        self.is_up_pressed = False
+        if self.up_job is not None:
+            self.root.after_cancel(self.up_job)
+            self.up_job = None
+
+    def scroll_up_fast(self) -> None:
+        if self.is_up_pressed:
+            self.move_up()
+            self.up_job = self.root.after(self.history_scroll_interval, self.scroll_up_fast)
+
+    def on_down_press(self, event: Any) -> str | None:
+        if self.root.focus_get() == self.lang_cb:
+            return None
+
+        if self.down_release_job is not None:
+            self.root.after_cancel(self.down_release_job)
+            self.down_release_job = None
+
+        if not self.is_down_pressed:
+            self.is_down_pressed = True
+            self.move_down()
+            self.down_job = self.root.after(self.history_scroll_delay, self.scroll_down_fast)
+
+        if self.sidebar_visible:
+            return "break"
+
+        return None
+
+    def on_down_release(self, event: Any) -> str | None:
+        if self.root.focus_get() == self.lang_cb:
+            return None
+
+        self.down_release_job = self.root.after(10, self.cancel_down_scroll)
+        if self.sidebar_visible:
+            return "break"
+
+        return None
+
+    def cancel_down_scroll(self) -> None:
+        self.is_down_pressed = False
+        if self.down_job is not None:
+            self.root.after_cancel(self.down_job)
+            self.down_job = None
+
+    def scroll_down_fast(self) -> None:
+        if self.is_down_pressed:
+            self.move_down()
+            self.down_job = self.root.after(self.history_scroll_interval, self.scroll_down_fast)
 
     def on_return_key(self, event: Any) -> str | None:
         focused = self.root.focus_get()
+
         if focused in (self.country_entry, self.lang_cb):
             return None
 
@@ -459,6 +536,7 @@ class Player:
                 self.root.focus_set()
                 self.root.after(0, self.play_specific, ch)
             return "break"
+
         return None
 
     def on_country_return(self, event: Any) -> str:
