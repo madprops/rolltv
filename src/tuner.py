@@ -205,6 +205,7 @@ class Tuner:
             self.player.stall_retries = (
                 0 if self.player.is_roll else self.player.stall_retries + 1
             )
+
             next_idx = 1 if self.player.active_idx == 0 else 0
             self.player.player_search_ids[next_idx] = -1
             self.player.players[next_idx].stop()
@@ -286,7 +287,7 @@ class Tuner:
         ]
         self.player.history.append(self.player.pending_channel)
 
-        if len(self.player.history) > data.max_history:
+        if len(self.player.history) > data.max_history_items:
             self.player.history.pop(0)
 
         store.save_history(self.player.history)

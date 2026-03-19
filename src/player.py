@@ -704,7 +704,7 @@ class Player:
                 if name_match or country_name_match:
                     self.sidebar_items.append(ch)
 
-                    if len(self.sidebar_items) >= 200:
+                    if len(self.sidebar_items) >= data.max_country_items:
                         break
 
         elif self.active_sidebar == "country":
