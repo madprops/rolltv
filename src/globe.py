@@ -67,7 +67,7 @@ html = """
 
     <style>
         body { margin: 0; padding: 0; background-color: #1A1B26; overflow: hidden; }
-        #hover-tooltip { position: absolute; top: 5px; right: 10px; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; font-size: 20px }
+        #hover-tooltip { position: absolute; top: 10px; right: 15px; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; font-size: 20px }
     </style>
 
     <script>
