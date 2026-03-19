@@ -651,11 +651,17 @@ class Player:
                 if name_match or country_name_match:
                     self.sidebar_items.append(ch)
 
+                    if len(self.sidebar_items) >= 200:
+                        break
+
         elif self.active_sidebar == "country":
             target_country = self.country_var.get().strip().lower()
 
             if target_country == self.country_placeholder.lower():
                 target_country = ""
+
+            if target_country == "" and self.current_country != "Unknown":
+                target_country = self.current_country.lower()
 
             for ch in self.channels:
                 country_match = True
@@ -676,6 +682,9 @@ class Player:
 
                     if name_match or country_name_match:
                         self.sidebar_items.append(ch)
+
+                        if len(self.sidebar_items) >= 200:
+                            break
 
         for ch in self.sidebar_items:
             img = None
