@@ -372,7 +372,11 @@ class Player:
             tb = v_br + a_br
 
             if tb > 0:
-                br_str = f"{tb / 1000000:.1f} Mbps" if tb > 1000000 else f"{tb / 1000:.0f} kbps"
+                br_str = (
+                    f"{tb / 1000000:.1f} Mbps"
+                    if tb > 1000000
+                    else f"{tb / 1000:.0f} kbps"
+                )
             else:
                 br_str = "Unknown bitrate"
 
@@ -1022,7 +1026,9 @@ class Player:
         c_name = self.pending_channel.get("country_name", "")
 
         if c_name:
-            self.current_channel_name = f"{self.pending_channel['name']} ({c_name.title()})"
+            self.current_channel_name = (
+                f"{self.pending_channel['name']} ({c_name.title()})"
+            )
         else:
             self.current_channel_name = self.pending_channel["name"]
 
