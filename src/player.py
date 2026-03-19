@@ -61,6 +61,8 @@ class Player:
                 self.menu_icon_photo = tk.PhotoImage(file=icon_path)
                 self.root.iconphoto(True, self.menu_icon_photo)
                 self.menu_icon = self.menu_icon_photo.subsample(5, 5)
+                factor = max(1, self.menu_icon_photo.width() // data.menu_icon_size)
+                self.menu_icon = self.menu_icon_photo.subsample(factor, factor)
             except Exception as e:
                 utils.print(f"Could not load icon: {e}")
 
