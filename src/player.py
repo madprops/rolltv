@@ -36,8 +36,8 @@ class Player:
         self.tuning_timeout: str | None = None
         self.msg_timeout_id: str | None = None
         self.history = self.load_history()
-        self.filtered_history: list[dict[str, Any]] = []
-        self.history_active_index = 0
+        self.sidebar_items: list[dict[str, Any]] = []
+        self.sidebar_active_index = 0
         self.history_scroll_delay = 200
         self.history_scroll_interval = 50
         self.up_job: str | None = None
@@ -47,7 +47,7 @@ class Player:
         self.roll_anim_job: str | None = None
         self.is_up_pressed = False
         self.is_down_pressed = False
-        self.sidebar_visible = False
+        self.active_sidebar: str | None = None
         self.stall_retries = 0
         self.country_placeholder = "Country"
         self.root.title(data.title)
@@ -108,6 +108,7 @@ class Player:
         self.saved_data = self.load_data()
         country_val = self.saved_data.get("country", self.country_placeholder)
         self.country_var = tk.StringVar(value=country_val)
+        self.country_var.trace_add("write", self.on_country_var_change)
 
         self.country_frame = tk.Frame(
             self.btn_frame,
@@ -221,6 +222,25 @@ class Player:
 
         self.paste_btn.pack(side=tk.LEFT, padx=5)
 
+        self.country_btn = tk.Button(
+            self.btn_frame,
+            text="Country",
+            command=self.toggle_country,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg=data.fg_color,
+            activebackground=data.btn_active,
+            activeforeground=data.accent_color,
+            relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightthickness=1,
+            bd=0,
+            padx=12,
+            pady=4,
+        )
+
+        self.country_btn.pack(side=tk.LEFT, padx=5)
+
         self.history_btn = tk.Button(
             self.btn_frame,
             text="History",
@@ -332,11 +352,13 @@ class Player:
         )
 
         self.sidebar_frame.pack_propagate(False)
-        self.history_filter_placeholder = "Filter"
-        self.history_filter_var = tk.StringVar(value=self.history_filter_placeholder)
+        self.sidebar_filter_placeholder = "Filter"
+        self.history_filter_var = tk.StringVar(value=self.sidebar_filter_placeholder)
         self.history_filter_var.trace_add("write", self.update_sidebar)
+        self.country_filter_var = tk.StringVar(value=self.sidebar_filter_placeholder)
+        self.country_filter_var.trace_add("write", self.update_sidebar)
 
-        self.history_filter_frame = tk.Frame(
+        self.sidebar_filter_frame = tk.Frame(
             self.sidebar_frame,
             bg=data.btn_bg,
             highlightbackground=data.btn_border,
@@ -345,10 +367,8 @@ class Player:
             bd=0,
         )
 
-        self.history_filter_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
-
-        self.history_filter_entry = tk.Entry(
-            self.history_filter_frame,
+        self.sidebar_filter_entry = tk.Entry(
+            self.sidebar_filter_frame,
             textvariable=self.history_filter_var,
             font=data.font_ui,
             bg=data.btn_bg,
@@ -359,12 +379,14 @@ class Player:
             bd=0,
         )
 
-        self.history_filter_entry.pack(fill=tk.X, padx=8, pady=4)
-        self.history_filter_entry.bind("<FocusIn>", self.on_history_filter_focus_in)
-        self.history_filter_entry.bind("<FocusOut>", self.on_history_filter_focus_out)
+        self.sidebar_filter_entry.pack(fill=tk.X, padx=8, pady=4)
+        self.sidebar_filter_entry.bind("<FocusIn>", self.on_sidebar_filter_focus_in)
+        self.sidebar_filter_entry.bind("<FocusOut>", self.on_sidebar_filter_focus_out)
+        self.sidebar_listbox_frame = tk.Frame(self.sidebar_frame, bg=data.btn_bg)
+        self.sidebar_listbox_frame.pack(fill=tk.BOTH, expand=True)
 
         style.configure(
-            "History.Treeview",
+            "Sidebar.Treeview",
             background=data.btn_bg,
             foreground=data.fg_color,
             fieldbackground=data.btn_bg,
@@ -377,35 +399,35 @@ class Player:
         )
 
         style.map(
-            "History.Treeview",
+            "Sidebar.Treeview",
             background=[("selected", data.list_select_bg)],
             foreground=[("selected", data.fg_color)],
         )
 
-        self.history_listbox = ttk.Treeview(
-            self.sidebar_frame,
-            style="History.Treeview",
+        self.sidebar_listbox = ttk.Treeview(
+            self.sidebar_listbox_frame,
+            style="Sidebar.Treeview",
             show="tree",
             selectmode="browse",
         )
 
         self.scrollbar = tk.Scrollbar(
-            self.sidebar_frame,
-            command=self.history_listbox.yview,
+            self.sidebar_listbox_frame,
+            command=self.sidebar_listbox.yview,
             bg=data.bg_color,
             bd=0,
             highlightthickness=0,
             relief=tk.FLAT,
         )
 
-        self.history_listbox.config(yscrollcommand=self.scrollbar.set)
+        self.sidebar_listbox.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.history_listbox.pack(
+        self.sidebar_listbox.pack(
             side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10
         )
 
-        self.history_listbox.bind("<Button-1>", self.on_history_click)
+        self.sidebar_listbox.bind("<Button-1>", self.on_sidebar_click)
         self.frames = []
         self.players = []
 
@@ -604,7 +626,7 @@ class Player:
             if args.show_status:
                 self.status_frame.pack_forget()
 
-            if self.sidebar_visible:
+            if self.active_sidebar:
                 self.sidebar_frame.pack_forget()
             if self.menu_sidebar_visible:
                 self.menu_sidebar_frame.pack_forget()
@@ -621,7 +643,7 @@ class Player:
                     side=tk.LEFT, fill=tk.Y, before=self.video_container
                 )
 
-            if self.sidebar_visible:
+            if self.active_sidebar:
                 self.sidebar_frame.pack(
                     side=tk.RIGHT, fill=tk.Y, before=self.video_container
                 )
@@ -638,21 +660,22 @@ class Player:
                 self.root.focus_set()
             return
 
-        if self.sidebar_visible and not self.is_fullscreen:
-            current_filter = self.history_filter_var.get()
+        if self.active_sidebar and not self.is_fullscreen:
+            active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+            current_filter = active_var.get()
 
             if (
-                current_filter != self.history_filter_placeholder
+                current_filter != self.sidebar_filter_placeholder
                 and current_filter != ""
             ):
-                if focused == self.history_filter_entry:
-                    self.history_filter_var.set("")
+                if focused == self.sidebar_filter_entry:
+                    active_var.set("")
                 else:
-                    self.history_filter_var.set(self.history_filter_placeholder)
-                    self.history_filter_entry.config(fg="gray")
+                    active_var.set(self.sidebar_filter_placeholder)
+                    self.sidebar_filter_entry.config(fg="gray")
 
                 return
-            elif focused == self.history_filter_entry:
+            elif focused == self.sidebar_filter_entry:
                 self.root.focus_set()
                 return
 
@@ -671,42 +694,46 @@ class Player:
 
         self.save_data()
 
-    def on_history_filter_focus_in(self, event: Any) -> None:
-        if self.history_filter_var.get() == self.history_filter_placeholder:
-            self.history_filter_var.set("")
-            self.history_filter_entry.config(fg=data.fg_color)
+    def on_sidebar_filter_focus_in(self, event: Any) -> None:
+        active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+        if active_var.get() == self.sidebar_filter_placeholder:
+            active_var.set("")
+            self.sidebar_filter_entry.config(fg=data.fg_color)
 
-    def on_history_filter_focus_out(self, event: Any) -> None:
-        if self.history_filter_var.get().strip() == "":
-            self.history_filter_var.set(self.history_filter_placeholder)
-            self.history_filter_entry.config(fg="gray")
+    def on_sidebar_filter_focus_out(self, event: Any) -> None:
+        active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+        if active_var.get().strip() == "":
+            active_var.set(self.sidebar_filter_placeholder)
+            self.sidebar_filter_entry.config(fg="gray")
 
     def on_global_key_press(self, event: Any) -> str | None:
-        if not self.sidebar_visible:
+        if not self.active_sidebar:
             return None
 
         focused = self.root.focus_get()
 
-        if focused in (self.country_entry, self.history_filter_entry, self.lang_cb):
+        if focused in (self.country_entry, self.sidebar_filter_entry, self.lang_cb):
             return None
 
         if getattr(event, "char", "") and event.char.isprintable():
-            self.history_filter_entry.focus_set()
+            self.sidebar_filter_entry.focus_set()
 
-            if self.history_filter_var.get() == self.history_filter_placeholder:
-                self.history_filter_var.set("")
-                self.history_filter_entry.config(fg=data.fg_color)
+            active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+            if active_var.get() == self.sidebar_filter_placeholder:
+                active_var.set("")
+                self.sidebar_filter_entry.config(fg=data.fg_color)
 
-            self.history_filter_entry.insert(tk.END, event.char)
+            self.sidebar_filter_entry.insert(tk.END, event.char)
             return "break"
         elif getattr(event, "keysym", "") == "BackSpace":
-            self.history_filter_entry.focus_set()
+            self.sidebar_filter_entry.focus_set()
 
-            if self.history_filter_var.get() != self.history_filter_placeholder:
-                current = self.history_filter_entry.get()
+            active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+            if active_var.get() != self.sidebar_filter_placeholder:
+                current = self.sidebar_filter_entry.get()
 
                 if len(current) > 0:
-                    self.history_filter_entry.delete(len(current) - 1, tk.END)
+                    self.sidebar_filter_entry.delete(len(current) - 1, tk.END)
 
             return "break"
 
@@ -717,16 +744,16 @@ class Player:
             self.root.focus_set()
 
     def move_up(self) -> None:
-        if self.sidebar_visible:
-            if self.history_active_index > 0:
-                self.history_active_index -= 1
-                self.draw_history_selection()
+        if self.active_sidebar:
+            if self.sidebar_active_index > 0:
+                self.sidebar_active_index -= 1
+                self.draw_sidebar_selection()
 
     def move_down(self) -> None:
-        if self.sidebar_visible:
-            if self.history_active_index < len(self.filtered_history) - 1:
-                self.history_active_index += 1
-                self.draw_history_selection()
+        if self.active_sidebar:
+            if self.sidebar_active_index < len(self.sidebar_items) - 1:
+                self.sidebar_active_index += 1
+                self.draw_sidebar_selection()
 
     def on_up_press(self, event: Any) -> str | None:
         if self.root.focus_get() == self.lang_cb:
@@ -744,7 +771,7 @@ class Player:
                 self.history_scroll_delay, self.scroll_up_fast
             )
 
-        if self.sidebar_visible:
+        if self.active_sidebar:
             return "break"
 
         return None
@@ -755,7 +782,7 @@ class Player:
 
         self.up_release_job = self.root.after(10, self.cancel_up_scroll)
 
-        if self.sidebar_visible:
+        if self.active_sidebar:
             return "break"
 
         return None
@@ -791,7 +818,7 @@ class Player:
                 self.history_scroll_delay, self.scroll_down_fast
             )
 
-        if self.sidebar_visible:
+        if self.active_sidebar:
             return "break"
 
         return None
@@ -802,7 +829,7 @@ class Player:
 
         self.down_release_job = self.root.after(10, self.cancel_down_scroll)
 
-        if self.sidebar_visible:
+        if self.active_sidebar:
             return "break"
 
         return None
@@ -828,9 +855,9 @@ class Player:
         if focused in (self.country_entry, self.lang_cb):
             return None
 
-        if self.sidebar_visible:
-            if len(self.filtered_history) > 0:
-                ch = self.filtered_history[self.history_active_index]
+        if self.active_sidebar:
+            if len(self.sidebar_items) > 0:
+                ch = self.sidebar_items[self.sidebar_active_index]
                 self.root.focus_set()
                 self.root.after(0, self.play_specific, ch)
 
@@ -847,6 +874,10 @@ class Player:
     def on_language_selected(self, event: Any) -> None:
         self.root.focus_set()
         self.save_data()
+
+    def on_country_var_change(self, *args: Any) -> None:
+        if self.active_sidebar == "country":
+            self.update_sidebar()
 
     def setup_languages(self) -> None:
         self.lang_map = {
@@ -938,24 +969,52 @@ class Player:
         except Exception as e:
             utils.print(f"Failed to save history: {e}")
 
-    def show_history(self) -> None:
+    def toggle_sidebar(self, sidebar_type: str) -> None:
+        if self.active_sidebar == sidebar_type:
+            self.hide_sidebar()
+        else:
+            self.show_sidebar(sidebar_type)
+
+    def show_sidebar(self, sidebar_type: str) -> None:
+        self.active_sidebar = sidebar_type
+
+        if sidebar_type == "history":
+            self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
+            self.country_btn.config(bg=data.btn_bg, relief=tk.FLAT)
+            self.sidebar_filter_entry.config(textvariable=self.history_filter_var)
+
+            if self.history_filter_var.get() == self.sidebar_filter_placeholder:
+                self.sidebar_filter_entry.config(fg="gray")
+            else:
+                self.sidebar_filter_entry.config(fg=data.fg_color)
+        elif sidebar_type == "country":
+            self.country_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
+            self.history_btn.config(bg=data.btn_bg, relief=tk.FLAT)
+            self.sidebar_filter_entry.config(textvariable=self.country_filter_var)
+
+            if self.country_filter_var.get() == self.sidebar_filter_placeholder:
+                self.sidebar_filter_entry.config(fg="gray")
+            else:
+                self.sidebar_filter_entry.config(fg=data.fg_color)
+
+        self.sidebar_filter_frame.pack(fill=tk.X, padx=10, pady=(10, 0), before=self.sidebar_listbox_frame)
+
         self.update_sidebar()
         self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, before=self.video_container)
-        self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
-        self.sidebar_visible = True
         self.root.focus_set()
 
-    def hide_history(self) -> None:
+    def hide_sidebar(self) -> None:
+        self.active_sidebar = None
         self.sidebar_frame.pack_forget()
         self.history_btn.config(bg=data.btn_bg, relief=tk.FLAT)
-        self.sidebar_visible = False
+        self.country_btn.config(bg=data.btn_bg, relief=tk.FLAT)
         self.root.focus_set()
 
     def toggle_history(self) -> None:
-        if self.sidebar_visible:
-            self.hide_history()
-        else:
-            self.show_history()
+        self.toggle_sidebar("history")
+
+    def toggle_country(self) -> None:
+        self.toggle_sidebar("country")
 
     def toggle_menu(self, event: Any = None) -> None:
         if self.menu_sidebar_visible:
@@ -967,6 +1026,7 @@ class Player:
         self.menu_sidebar_frame.pack(
             side=tk.LEFT, fill=tk.Y, before=self.video_container
         )
+
         self.menu_sidebar_visible = True
 
     def hide_menu(self) -> None:
@@ -990,91 +1050,121 @@ class Player:
         self.root.destroy()
 
     def update_sidebar(self, *args: Any) -> None:
+        if not self.active_sidebar:
+            return
+
         active_url = None
 
-        if len(self.filtered_history) > self.history_active_index >= 0:
-            active_url = self.filtered_history[self.history_active_index]["url"]
+        if len(self.sidebar_items) > self.sidebar_active_index >= 0:
+            active_url = self.sidebar_items[self.sidebar_active_index]["url"]
 
-        self.history_listbox.delete(*self.history_listbox.get_children())
-        self.filtered_history = []
-        filter_text = self.history_filter_var.get().lower()
-
-        if filter_text == self.history_filter_placeholder.lower():
-            filter_text = ""
+        self.sidebar_listbox.delete(*self.sidebar_listbox.get_children())
+        self.sidebar_items = []
 
         if not hasattr(self, "flag_images"):
             self.flag_images = {}
 
-        for ch in reversed(self.history):
-            name_match = filter_text in ch["name"].lower()
-            country_name_match = filter_text in ch.get("country_name", "").lower()
+        active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+        filter_text = active_var.get().lower()
 
-            if name_match or country_name_match:
-                self.filtered_history.append(ch)
+        if filter_text == self.sidebar_filter_placeholder.lower():
+            filter_text = ""
 
-                img = None
-                c_code = ch.get("country_code", "")
+        if self.active_sidebar == "history":
+            for ch in reversed(self.history):
+                name_match = filter_text in ch["name"].lower()
+                country_name_match = filter_text in ch.get("country_name", "").lower()
 
-                if isinstance(c_code, str) and len(c_code) == 2:
-                    c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
-                    flag_path = os.path.expanduser(f"~/.config/{info.name}/flags/{c_code}.png")
+                if name_match or country_name_match:
+                    self.sidebar_items.append(ch)
 
-                    if os.path.exists(flag_path):
-                        if c_code not in self.flag_images:
-                            try:
-                                self.flag_images[c_code] = tk.PhotoImage(file=flag_path)
-                            except Exception:
-                                pass
-                        img = self.flag_images.get(c_code)
-                    else:
-                        threading.Thread(target=self.fetch_flag_only, args=(c_code,), daemon=True).start()
+        elif self.active_sidebar == "country":
+            target_country = self.country_var.get().strip().lower()
 
-                if img:
-                    self.history_listbox.insert("", tk.END, text=f"   {ch['name']}", image=img)
+            if target_country == self.country_placeholder.lower():
+                target_country = ""
+
+            for ch in self.channels:
+                country_match = True
+
+                if target_country != "":
+                    c_code = (ch.get("country_code") or "").lower()
+                    c_name = (ch.get("country_name") or "").lower()
+
+                    if target_country != c_code and target_country not in c_name:
+                        country_match = False
+
+                if country_match:
+                    name_match = filter_text in ch["name"].lower()
+                    country_name_match = filter_text in ch.get("country_name", "").lower()
+
+                    if name_match or country_name_match:
+                        self.sidebar_items.append(ch)
+
+        for ch in self.sidebar_items:
+            img = None
+            c_code = ch.get("country_code", "")
+
+            if isinstance(c_code, str) and len(c_code) == 2:
+                c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
+                flag_path = os.path.expanduser(f"~/.config/{info.name}/flags/{c_code}.png")
+
+                if os.path.exists(flag_path):
+                    if c_code not in self.flag_images:
+                        try:
+                            self.flag_images[c_code] = tk.PhotoImage(file=flag_path)
+                        except Exception:
+                            pass
+                    img = self.flag_images.get(c_code)
                 else:
-                    self.history_listbox.insert("", tk.END, text=f"   {ch['name']}")
+                    threading.Thread(target=self.fetch_flag_only, args=(c_code,), daemon=True).start()
+
+            if img:
+                self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}", image=img)
+            else:
+                self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}")
 
         new_active_index = 0
 
         if active_url:
-            for i, ch in enumerate(self.filtered_history):
+            for i, ch in enumerate(self.sidebar_items):
                 if ch["url"] == active_url:
                     new_active_index = i
                     break
 
-        self.history_active_index = new_active_index
-        self.draw_history_selection()
+        self.sidebar_active_index = new_active_index
+        self.draw_sidebar_selection()
 
-    def draw_history_selection(self) -> None:
-        sel = self.history_listbox.selection()
+    def draw_sidebar_selection(self) -> None:
+        sel = self.sidebar_listbox.selection()
 
         if sel:
-            self.history_listbox.selection_remove(*sel)
+            self.sidebar_listbox.selection_remove(*sel)
 
-        if len(self.filtered_history) > 0:
-            if self.history_active_index >= len(self.filtered_history):
-                self.history_active_index = len(self.filtered_history) - 1
+        if len(self.sidebar_items) > 0:
+            if self.sidebar_active_index >= len(self.sidebar_items):
+                self.sidebar_active_index = len(self.sidebar_items) - 1
 
-            if self.history_active_index < 0:
-                self.history_active_index = 0
+            if self.sidebar_active_index < 0:
+                self.sidebar_active_index = 0
 
-            children = self.history_listbox.get_children()
+            children = self.sidebar_listbox.get_children()
 
-            if self.history_active_index < len(children):
-                item_id = children[self.history_active_index]
-                self.history_listbox.selection_set(item_id)
-                self.history_listbox.see(item_id)
+            if self.sidebar_active_index < len(children):
+                item_id = children[self.sidebar_active_index]
+                self.sidebar_listbox.selection_set(item_id)
+                self.sidebar_listbox.see(item_id)
 
-    def on_history_click(self, event: Any) -> str:
-        item_id = self.history_listbox.identify_row(event.y)
+    def on_sidebar_click(self, event: Any) -> str:
+        item_id = self.sidebar_listbox.identify_row(event.y)
 
         if item_id:
-            children = self.history_listbox.get_children()
+            children = self.sidebar_listbox.get_children()
             try:
                 index = children.index(item_id)
-                self.history_active_index = index
-                self.draw_history_selection()
-                ch = self.filtered_history[index]
+                self.sidebar_active_index = index
+                self.draw_sidebar_selection()
+                ch = self.sidebar_items[index]
                 self.root.after(0, self.play_specific, ch)
             except ValueError:
                 pass
@@ -1371,7 +1461,7 @@ class Player:
 
         self.save_history()
 
-        if self.sidebar_visible:
+        if self.active_sidebar:
             self.update_sidebar()
 
     def load_or_fetch_flag(self, c_code: str, expected_name: str) -> None:
@@ -1427,7 +1517,8 @@ class Player:
                                 self.flag_images[c_code] = tk.PhotoImage(file=flag_path)
                             except Exception:
                                 return
-                            self.update_sidebar()
+                            if self.active_sidebar:
+                                self.update_sidebar()
 
                         self.root.after(0, update_images)
             except Exception:
