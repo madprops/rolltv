@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 import urllib.request
 import random
 import os
@@ -23,11 +24,9 @@ class Player:
         self.history = self.load_history()
         self.sidebar_visible = False
         self.stall_retries = 0
-
         self.root.title(data.title)
         self.root.geometry("1000x600")
         self.root.configure(bg=data.bg_color)
-
         script_dir = os.path.dirname(os.path.abspath(__file__))
         icon_path = os.path.join(script_dir, "icon.png")
 
@@ -40,6 +39,19 @@ class Player:
 
         self.top_frame = tk.Frame(root, bg=data.bg_color)
         self.top_frame.pack(fill=tk.X, pady=10, padx=15)
+        self.languages = self.extract_languages()
+        self.selected_lang = tk.StringVar(value="Any Language")
+
+        self.lang_cb = ttk.Combobox(
+            self.top_frame,
+            textvariable=self.selected_lang,
+            values=["Any Language"] + self.languages,
+            state="readonly",
+            font=data.font_ui,
+            width=15
+        )
+
+        self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
 
         self.name_label = tk.Label(
             self.top_frame,
@@ -66,7 +78,7 @@ class Player:
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10
+            padx=10,
         )
 
         self.copy_btn.pack(side=tk.LEFT, padx=5)
@@ -91,7 +103,7 @@ class Player:
 
         self.history_btn = tk.Button(
             self.btn_frame,
-            text="📺 History",
+            text="🕒 History",
             command=self.toggle_history,
             font=data.font_ui,
             bg=data.btn_bg,
@@ -177,20 +189,43 @@ class Player:
         @self.players[0].property_observer("playback-time")
         def check_ready_0(name, value):
             if value is not None and value > 0.1:
-
                 if self.tuning and self.active_idx != 0:
                     self.root.after(0, self.commit_switch, 0)
 
         @self.players[1].property_observer("playback-time")
         def check_ready_1(name, value):
             if value is not None and value > 0.1:
-
                 if self.tuning and self.active_idx != 1:
                     self.root.after(0, self.commit_switch, 1)
 
         if len(self.history) > 0:
             last_channel = self.history[-1]
             self.root.after(500, self.play_specific, last_channel)
+
+    def extract_languages(self):
+        self.lang_map = {
+            "eng": "English", "spa": "Spanish", "fra": "French",
+            "deu": "German", "zho": "Chinese", "jpn": "Japanese",
+            "rus": "Russian", "por": "Portuguese", "ita": "Italian",
+            "ara": "Arabic", "hin": "Hindi", "kor": "Korean",
+            "nld": "Dutch", "tur": "Turkish", "pol": "Polish"
+        }
+
+        self.lang_map_rev = {v: k for k, v in self.lang_map.items()}
+
+        langs = set()
+        for ch in self.channels:
+            for l in ch.get("languages", []):
+                langs.add(l)
+
+        mapped_langs = set()
+        for l in langs:
+            if l in self.lang_map:
+                mapped_langs.add(self.lang_map[l])
+            else:
+                mapped_langs.add(l)
+
+        return sorted(list(mapped_langs))
 
     def load_history(self):
         config_dir = os.path.dirname(data.history_file)
@@ -209,6 +244,7 @@ class Player:
                 return json.load(f)
         except Exception as e:
             utils.print(f"Failed to load history: {e}")
+
         return []
 
     def save_history(self):
@@ -282,12 +318,23 @@ class Player:
     def find_live_stream(self):
         working_channel = None
         attempts = 0
+        sel_lang = self.selected_lang.get()
+        valid_channels = self.channels
+
+        if sel_lang != "Any Language":
+            target_code = self.lang_map_rev.get(sel_lang, sel_lang)
+            valid_channels = [ch for ch in self.channels if target_code in ch.get("languages", [])]
+
+        if len(valid_channels) == 0:
+            self.root.after(0, self.reset_button)
+            self.root.after(0, lambda: self.name_label.config(text="No channels for this language"))
+            return
 
         while working_channel is None:
             if attempts > 10:
                 break
 
-            candidate = random.choice(self.channels)
+            candidate = random.choice(valid_channels)
             attempts += 1
 
             try:

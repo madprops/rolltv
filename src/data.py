@@ -3,8 +3,10 @@ from info import info
 
 class Data:
     def __init__(self) -> None:
-        self.iptv_m3u_url = "https://iptv-org.github.io/iptv/index.m3u"
-        self.cache_file = "/tmp/iptv_channels.m3u"
+        self.channels_url = "https://iptv-org.github.io/api/channels.json"
+        self.streams_url = "https://iptv-org.github.io/api/streams.json"
+        self.cache_channels = "/tmp/iptv_channels.json"
+        self.cache_streams = "/tmp/iptv_streams.json"
         self.cache_expiry_seconds = 86400
         self.history_file = os.path.expanduser(f"~/.config/{info.name}/history.json")
         self.title = info.full_name
