@@ -33,6 +33,7 @@ class Data:
         self.height = 800
         self.url_timeout = 3.0
         self.info_restore_delay = 10 * 1000
+        self.url_timeout = 3.0
 
 
 data = Data()

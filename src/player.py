@@ -21,6 +21,8 @@ class Player:
         self.current_url = ""
         self.tuning = False
         self.is_roll = False
+        self.search_id = 0
+        self.player_search_ids = {0: -1, 1: -1}
         self.pending_channel: dict[str, Any] | None = None
         self.current_channel_name = f"{info.full_name} v{info.version}"
         self.tuning_timeout: str | None = None
@@ -319,14 +321,14 @@ class Player:
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
-                if self.tuning and self.active_idx != 0:
-                    self.root.after(0, self.commit_switch, 0)
+                current_id = self.player_search_ids[0]
+                self.root.after(0, self.commit_switch_if_valid, 0, current_id)
 
         @self.players[1].property_observer("playback-time")  # type: ignore
         def check_ready_1(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
-                if self.tuning and self.active_idx != 1:
-                    self.root.after(0, self.commit_switch, 1)
+                current_id = self.player_search_ids[1]
+                self.root.after(0, self.commit_switch_if_valid, 1, current_id)
 
         if len(self.history) > 0:
             last_channel = self.history[-1]
@@ -866,8 +868,8 @@ class Player:
         self.stall_retries = 0
         self.tuning = True
         self.is_roll = True
-        self.search_id = getattr(self, "search_id", 0) + 1
-        thread = threading.Thread(target=self.find_live_stream, daemon=True)
+        self.search_id += 1
+        thread = threading.Thread(target=self.find_live_stream, args=(self.search_id,), daemon=True)
         thread.start()
 
     def animate_roll_button(self) -> None:
@@ -900,7 +902,8 @@ class Player:
         self.stall_retries = 0
         self.tuning = True
         self.is_roll = False
-        self.prepare_switch(channel)
+        self.search_id += 1
+        self.prepare_switch(channel, self.search_id)
 
     def cancel_tuning(self) -> None:
         self.tuning = False
@@ -910,11 +913,11 @@ class Player:
             self.tuning_timeout = None
 
         next_idx = 1 if self.active_idx == 0 else 0
+        self.player_search_ids[next_idx] = -1
         self.players[next_idx].stop()
         self.show_info_message("Tuning cancelled.")
 
-    def find_live_stream(self) -> None:
-        my_search_id = getattr(self, "search_id", 0)
+    def find_live_stream(self, my_search_id: int) -> None:
         working_channel = None
         attempts = 0
         sel_lang = self.selected_lang.get()
@@ -958,7 +961,7 @@ class Player:
             return
 
         while working_channel is None:
-            if not self.tuning or my_search_id != getattr(self, "search_id", 0):
+            if not self.tuning or my_search_id != self.search_id:
                 return
 
             if attempts > 30:
@@ -983,8 +986,8 @@ class Player:
                     headers={"User-Agent": "mpv/0.34.0"},
                 )
 
-                with urllib.request.urlopen(req, timeout=3.0) as response:
-                    if not self.tuning or my_search_id != getattr(self, "search_id", 0):
+                with urllib.request.urlopen(req, timeout=data.url_timeout) as response:
+                    if not self.tuning or (my_search_id != self.search_id):
                         return
 
                     if response.status in [200, 206, 301, 302]:
@@ -1004,11 +1007,11 @@ class Player:
             except Exception:
                 continue
 
-        if not self.tuning or (my_search_id != getattr(self, "search_id", 0)):
+        if not self.tuning or my_search_id != self.search_id:
             return
 
         if working_channel is not None:
-            self.root.after(0, self.prepare_switch, working_channel)
+            self.root.after(0, self.prepare_switch, working_channel, my_search_id)
         else:
             self.root.after(0, self.reset_button)
 
@@ -1016,7 +1019,10 @@ class Player:
                 0, lambda: self.show_info_message("Could not find a working stream.")
             )
 
-    def prepare_switch(self, channel: dict[str, Any]) -> None:
+    def prepare_switch(self, channel: dict[str, Any], search_id: int) -> None:
+        if not self.tuning or search_id != self.search_id:
+            return
+
         self.pending_channel = channel
         next_idx = 0
 
@@ -1026,46 +1032,62 @@ class Player:
         if self.tuning_timeout is not None:
             self.root.after_cancel(self.tuning_timeout)
 
-        self.tuning_timeout = self.root.after(data.tuning_timeout, self.handle_timeout)
+        self.tuning_timeout = self.root.after(data.tuning_timeout, lambda: self.handle_timeout(search_id))
+        self.player_search_ids[next_idx] = search_id
         self.players[next_idx].play(channel["url"])
 
-    def handle_timeout(self) -> None:
-        if self.tuning:
-            if self.is_roll or self.stall_retries < data.max_retries:
-                if self.is_roll:
-                    self.stall_retries = 0
-                    self.show_info_message("Stalled. Trying a different stream...")
-                else:
-                    self.stall_retries += 1
-                    self.show_info_message(
-                        f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
-                    )
+    def handle_timeout(self, search_id: int) -> None:
+        if not self.tuning or search_id != self.search_id:
+            return
 
-                next_idx = 0
-
-                if self.active_idx == 0:
-                    next_idx = 1
-
-                self.players[next_idx].stop()
-
-                if self.is_roll:
-                    self.search_id = getattr(self, "search_id", 0) + 1
-                    thread = threading.Thread(target=self.find_live_stream, daemon=True)
-                    thread.start()
-                elif self.pending_channel:
-                    self.prepare_switch(self.pending_channel)
+        if self.is_roll or self.stall_retries < data.max_retries:
+            if self.is_roll:
+                self.stall_retries = 0
+                self.show_info_message("Stalled. Trying a different stream...")
             else:
-                self.tuning = False
-                next_idx = 0
-
-                if self.active_idx == 0:
-                    next_idx = 1
-
-                self.players[next_idx].stop()
+                self.stall_retries += 1
 
                 self.show_info_message(
-                    f"Stream stalled {data.max_retries} times. Roll again."
+                    f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
                 )
+
+            next_idx = 0
+
+            if self.active_idx == 0:
+                next_idx = 1
+
+            self.player_search_ids[next_idx] = -1
+            self.players[next_idx].stop()
+
+            self.search_id += 1
+            new_search_id = self.search_id
+
+            if self.is_roll:
+                thread = threading.Thread(target=self.find_live_stream, args=(new_search_id,), daemon=True)
+                thread.start()
+            elif self.pending_channel:
+                self.prepare_switch(self.pending_channel, new_search_id)
+        else:
+            self.tuning = False
+            next_idx = 0
+
+            if self.active_idx == 0:
+                next_idx = 1
+
+            self.player_search_ids[next_idx] = -1
+            self.players[next_idx].stop()
+
+            self.show_info_message(
+                f"Stream stalled {data.max_retries} times. Roll again."
+            )
+
+    def commit_switch_if_valid(self, ready_idx: int, search_id: int) -> None:
+        if not self.tuning or search_id != self.search_id:
+            return
+        if self.active_idx == ready_idx:
+            return
+
+        self.commit_switch(ready_idx)
 
     def commit_switch(self, ready_idx: int) -> None:
         if not self.tuning:
@@ -1085,6 +1107,7 @@ class Player:
         if ready_idx == 0:
             old_idx = 1
 
+        self.player_search_ids[old_idx] = -1
         self.players[old_idx].stop()
 
         if self.pending_channel is None:
