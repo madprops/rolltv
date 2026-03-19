@@ -234,20 +234,20 @@ class Player:
         for i in range(2):
             frame = tk.Frame(self.video_container, bg="black")
             frame.grid(row=0, column=0, sticky="nsew")
-            player = mpv.MPV(wid=str(frame.winfo_id()), hwdec="auto")
+
+            player = mpv.MPV(
+                wid=str(frame.winfo_id()),
+                hwdec="auto",
+                input_vo_keyboard=True,
+            )
+
             self.frames.append(frame)
             self.players.append(player)
 
         self.active_idx = 0
         self.frames[0].tkraise()
-
-        @self.players[0].on_key_press("MBTN_LEFT_DBL")  # type: ignore
-        def on_dbl_click_0() -> None:
-            self.root.after(0, self.play_random)
-
-        @self.players[1].on_key_press("MBTN_LEFT_DBL")  # type: ignore
-        def on_dbl_click_1() -> None:
-            self.root.after(0, self.play_random)
+        self.is_fullscreen = False
+        self.root.bind("<Escape>", self.exit_fullscreen)
 
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
@@ -264,6 +264,43 @@ class Player:
         if len(self.history) > 0:
             last_channel = self.history[-1]
             self.root.after(500, self.play_specific, last_channel)
+
+        for player in self.players:
+            self.register_player_bindings(player)
+
+    def register_player_bindings(self, player: mpv.MPV) -> None:
+        @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
+        def _on_dbl_click() -> None:
+            self.root.after(0, self.toggle_maximize)
+
+        @player.on_key_press("WHEEL_UP")  # type: ignore
+        def _on_wheel_up() -> None:
+            self.root.after(0, self.volume_up)
+
+        @player.on_key_press("WHEEL_DOWN")  # type: ignore
+        def _on_wheel_down() -> None:
+            self.root.after(0, self.volume_down)
+
+        @player.on_key_press("MBTN_RIGHT")  # type: ignore
+        def _on_right_click() -> None:
+            self.root.after(0, self.toggle_pause)
+
+    def toggle_maximize(self, event: Any = None) -> None:
+        self.is_fullscreen = not self.is_fullscreen
+        self.root.attributes("-fullscreen", self.is_fullscreen)
+
+        if self.is_fullscreen:
+            self.top_frame.pack_forget()
+            if self.sidebar_visible:
+                self.sidebar_frame.pack_forget()
+        else:
+            self.top_frame.pack(fill=tk.X, pady=10, padx=15, before=self.main_content_frame)
+            if self.sidebar_visible:
+                self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, before=self.video_container)
+
+    def exit_fullscreen(self, event: Any = None) -> None:
+        if self.is_fullscreen:
+            self.toggle_maximize()
 
     def on_country_focus_in(self, event: Any) -> None:
         if self.country_var.get() == self.country_placeholder:
@@ -583,18 +620,24 @@ class Player:
 
         if player:
             current_vol = player.volume
-            player.volume = min(current_vol + 5, 100)
+            if current_vol is not None:
+                player.volume = min(current_vol + 5, 100)
+                player.show_text(f"Volume: {int(player.volume)}%")
 
     def volume_down(self, event: Any) -> None:
         player = self.players[self.active_idx]
-        utils.print(player)
 
         if player:
             current_vol = player.volume
-            player.volume = max(current_vol - 5, 0)
+            if current_vol is not None:
+                player.volume = max(current_vol - 5, 0)
+                player.show_text(f"Volume: {int(player.volume)}%")
 
     def toggle_pause(self, event: Any) -> None:
         player = self.players[self.active_idx]
 
         if player:
-            player.pause = not player.pause
+            if player.pause is not None:
+                player.pause = not player.pause
+                status = "Paused" if player.pause else "Playing"
+                player.show_text(status)
