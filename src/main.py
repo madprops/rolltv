@@ -38,27 +38,30 @@ def fetch_json(url, cache_file):
 def get_channels_data():
     channels_raw = fetch_json(data.channels_url, data.cache_channels)
     streams_raw = fetch_json(data.streams_url, data.cache_streams)
-
+    feeds_raw = fetch_json(data.feeds_url, data.cache_feeds)
     channel_dict = {}
 
     for ch in channels_raw:
         channel_dict[ch["id"]] = ch
+    feed_dict = {}
 
+    for f in feeds_raw:
+        feed_dict[f["id"]] = f
     merged = []
 
     for st in streams_raw:
         ch_id = st.get("channel")
+        feed_id = st.get("feed")
 
         if ch_id:
             if ch_id in channel_dict:
                 ch_info = channel_dict[ch_id]
+                langs = []
 
-                merged.append({
-                    "name": ch_info.get("name", "Unknown"),
-                    "url": st.get("url", ""),
-                    "languages": ch_info.get("languages", []),
-                })
-
+                if feed_id:
+                    if feed_id in feed_dict:
+                        langs = feed_dict[feed_id].get("languages", [])
+                merged.append({"name": ch_info.get("name", "Unknown"), "url": st.get("url", ""), "languages": langs})
     return merged
 
 def main():

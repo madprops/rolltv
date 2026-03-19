@@ -5,8 +5,10 @@ class Data:
     def __init__(self) -> None:
         self.channels_url = "https://iptv-org.github.io/api/channels.json"
         self.streams_url = "https://iptv-org.github.io/api/streams.json"
+        self.feeds_url = "https://iptv-org.github.io/api/feeds.json"
         self.cache_channels = "/tmp/iptv_channels.json"
         self.cache_streams = "/tmp/iptv_streams.json"
+        self.cache_feeds = "/tmp/iptv_feeds.json"
         self.cache_expiry_seconds = 86400
         self.history_file = os.path.expanduser(f"~/.config/{info.name}/history.json")
         self.title = info.full_name
