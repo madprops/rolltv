@@ -457,7 +457,10 @@ class Player:
         if not self.is_up_pressed:
             self.is_up_pressed = True
             self.move_up()
-            self.up_job = self.root.after(self.history_scroll_delay, self.scroll_up_fast)
+
+            self.up_job = self.root.after(
+                self.history_scroll_delay, self.scroll_up_fast
+            )
 
         if self.sidebar_visible:
             return "break"
@@ -483,7 +486,10 @@ class Player:
     def scroll_up_fast(self) -> None:
         if self.is_up_pressed:
             self.move_up()
-            self.up_job = self.root.after(self.history_scroll_interval, self.scroll_up_fast)
+
+            self.up_job = self.root.after(
+                self.history_scroll_interval, self.scroll_up_fast
+            )
 
     def on_down_press(self, event: Any) -> str | None:
         if self.root.focus_get() == self.lang_cb:
@@ -496,7 +502,10 @@ class Player:
         if not self.is_down_pressed:
             self.is_down_pressed = True
             self.move_down()
-            self.down_job = self.root.after(self.history_scroll_delay, self.scroll_down_fast)
+
+            self.down_job = self.root.after(
+                self.history_scroll_delay, self.scroll_down_fast
+            )
 
         if self.sidebar_visible:
             return "break"
@@ -522,7 +531,10 @@ class Player:
     def scroll_down_fast(self) -> None:
         if self.is_down_pressed:
             self.move_down()
-            self.down_job = self.root.after(self.history_scroll_interval, self.scroll_down_fast)
+
+            self.down_job = self.root.after(
+                self.history_scroll_interval, self.scroll_down_fast
+            )
 
     def on_return_key(self, event: Any) -> str | None:
         focused = self.root.focus_get()
@@ -641,11 +653,7 @@ class Player:
 
     def show_history(self) -> None:
         self.update_sidebar()
-
-        self.sidebar_frame.pack(
-            side=tk.RIGHT, fill=tk.Y, before=self.video_container
-        )
-
+        self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, before=self.video_container)
         self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
         self.sidebar_visible = True
         self.root.focus_set()
