@@ -196,7 +196,9 @@ class Player:
         self.video_container.grid_columnconfigure(0, weight=1)
         self.video_container.bind("<Button-4>", self.volume_up)
         self.video_container.bind("<Button-5>", self.volume_down)
+        self.video_container.bind("<MouseWheel>", self.on_mouse_wheel)
         self.video_container.bind("<Button-3>", self.toggle_pause)
+        self.video_container.bind("<Double-Button-1>", self.toggle_maximize)
 
         self.sidebar_frame = tk.Frame(
             self.main_content_frame, bg=data.btn_bg, width=300
@@ -234,6 +236,12 @@ class Player:
         for i in range(2):
             frame = tk.Frame(self.video_container, bg="black")
             frame.grid(row=0, column=0, sticky="nsew")
+
+            frame.bind("<Button-4>", self.volume_up)
+            frame.bind("<Button-5>", self.volume_down)
+            frame.bind("<MouseWheel>", self.on_mouse_wheel)
+            frame.bind("<Button-3>", self.toggle_pause)
+            frame.bind("<Double-Button-1>", self.toggle_maximize)
 
             player = mpv.MPV(
                 wid=str(frame.winfo_id()),
@@ -274,10 +282,12 @@ class Player:
             self.root.after(0, self.toggle_maximize)
 
         @player.on_key_press("WHEEL_UP")  # type: ignore
+        @player.on_key_press("AXIS_UP")  # type: ignore
         def _on_wheel_up() -> None:
             self.root.after(0, self.volume_up)
 
         @player.on_key_press("WHEEL_DOWN")  # type: ignore
+        @player.on_key_press("AXIS_DOWN")  # type: ignore
         def _on_wheel_down() -> None:
             self.root.after(0, self.volume_down)
 
@@ -615,7 +625,13 @@ class Player:
         except tk.TclError:
             utils.print("Clipboard is empty or inaccessible.")
 
-    def volume_up(self, event: Any) -> None:
+    def on_mouse_wheel(self, event: Any) -> None:
+        if event.delta > 0:
+            self.volume_up(event)
+        elif event.delta < 0:
+            self.volume_down(event)
+
+    def volume_up(self, event: Any = None) -> None:
         player = self.players[self.active_idx]
 
         if player:
@@ -624,7 +640,7 @@ class Player:
                 player.volume = min(current_vol + 5, 100)
                 player.show_text(f"Volume: {int(player.volume)}%")
 
-    def volume_down(self, event: Any) -> None:
+    def volume_down(self, event: Any = None) -> None:
         player = self.players[self.active_idx]
 
         if player:
@@ -633,7 +649,7 @@ class Player:
                 player.volume = max(current_vol - 5, 0)
                 player.show_text(f"Volume: {int(player.volume)}%")
 
-    def toggle_pause(self, event: Any) -> None:
+    def toggle_pause(self, event: Any = None) -> None:
         player = self.players[self.active_idx]
 
         if player:
