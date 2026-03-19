@@ -11,6 +11,7 @@ from typing import Any
 from utils import utils
 from data import data
 from player import Player
+from info import info
 
 
 def fetch_json(url: str, cache_file: str) -> Any:
