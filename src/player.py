@@ -299,6 +299,7 @@ class Player:
         self.root.bind("<KeyRelease-Down>", self.on_down_release)
         self.root.bind("<Return>", self.on_return_key)
         self.root.bind("<Key>", self.on_global_key_press)
+        self.root.bind_all("<Button-1>", self.on_global_click, add="+")
 
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
@@ -426,13 +427,20 @@ class Player:
             return "break"
         elif getattr(event, "keysym", "") == "BackSpace":
             self.history_filter_entry.focus_set()
+
             if self.history_filter_var.get() != self.history_filter_placeholder:
                 current = self.history_filter_entry.get()
+
                 if len(current) > 0:
                     self.history_filter_entry.delete(len(current) - 1, tk.END)
+
             return "break"
 
         return None
+
+    def on_global_click(self, event: Any) -> None:
+        if not isinstance(getattr(event, "widget", None), (tk.Entry, ttk.Combobox)):
+            self.root.focus_set()
 
     def move_up(self) -> None:
         if self.sidebar_visible:
@@ -479,6 +487,7 @@ class Player:
 
     def cancel_up_scroll(self) -> None:
         self.is_up_pressed = False
+
         if self.up_job is not None:
             self.root.after_cancel(self.up_job)
             self.up_job = None
@@ -517,6 +526,7 @@ class Player:
             return None
 
         self.down_release_job = self.root.after(10, self.cancel_down_scroll)
+
         if self.sidebar_visible:
             return "break"
 
@@ -524,6 +534,7 @@ class Player:
 
     def cancel_down_scroll(self) -> None:
         self.is_down_pressed = False
+
         if self.down_job is not None:
             self.root.after_cancel(self.down_job)
             self.down_job = None
