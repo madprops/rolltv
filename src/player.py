@@ -21,7 +21,9 @@ class Player:
         self.current_url = ""
         self.tuning = False
         self.pending_channel: dict[str, Any] | None = None
+        self.current_channel_name = f"{info.full_name} v{info.version}"
         self.tuning_timeout: str | None = None
+        self.msg_timeout_id: str | None = None
         self.history = self.load_history()
         self.sidebar_visible = False
         self.stall_retries = 0
@@ -44,7 +46,7 @@ class Player:
 
         self.name_label = tk.Label(
             self.top_frame,
-            text=f"{info.full_name} v{info.version}",
+            text=self.current_channel_name,
             font=data.font_ui,
             bg=data.bg_color,
             fg=data.fg_color,
@@ -53,14 +55,16 @@ class Player:
         self.name_label.pack(side=tk.LEFT)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT)
-        self.country_var = tk.StringVar(value=self.country_placeholder)
+        self.saved_data = self.load_data()
+        country_val = self.saved_data.get("country", self.country_placeholder)
+        self.country_var = tk.StringVar(value=country_val)
 
         self.country_entry = tk.Entry(
             self.btn_frame,
             textvariable=self.country_var,
             font=data.font_ui,
             bg=data.btn_bg,
-            fg="gray",
+            fg="gray" if country_val == self.country_placeholder else data.fg_color,
             insertbackground=data.fg_color,
             width=18,
             relief=tk.FLAT,
@@ -73,8 +77,10 @@ class Player:
         self.country_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.country_entry.bind("<FocusIn>", self.on_country_focus_in)
         self.country_entry.bind("<FocusOut>", self.on_country_focus_out)
+        self.country_entry.bind("<Return>", self.on_country_return)
         self.setup_languages()
-        self.selected_lang = tk.StringVar(value=data.any_language)
+        lang_val = self.saved_data.get("language", data.any_language)
+        self.selected_lang = tk.StringVar(value=lang_val)
         style = ttk.Style()
 
         if "clam" in style.theme_names():
@@ -115,7 +121,7 @@ class Player:
         )
 
         self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
-        self.lang_cb.bind("<<ComboboxSelected>>", lambda e: self.root.focus_set())
+        self.lang_cb.bind("<<ComboboxSelected>>", self.on_language_selected)
 
         self.copy_btn = tk.Button(
             self.btn_frame,
@@ -276,6 +282,18 @@ class Player:
         for player in self.players:
             self.register_player_bindings(player)
 
+    def show_info_message(self, text: str) -> None:
+        self.name_label.config(text=text)
+        if self.msg_timeout_id is not None:
+            self.root.after_cancel(self.msg_timeout_id)
+        self.msg_timeout_id = self.root.after(3000, self.restore_channel_name)
+
+    def restore_channel_name(self) -> None:
+        if self.msg_timeout_id is not None:
+            self.root.after_cancel(self.msg_timeout_id)
+        self.msg_timeout_id = None
+        self.name_label.config(text=self.current_channel_name)
+
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
         def _on_dbl_click() -> None:
@@ -326,6 +344,17 @@ class Player:
         if self.country_var.get().strip() == "":
             self.country_var.set(self.country_placeholder)
             self.country_entry.config(fg="gray")
+        self.save_data()
+
+    def on_country_return(self, event: Any) -> str:
+        self.root.focus_set()
+        self.save_data()
+        self.play_random()
+        return "break"
+
+    def on_language_selected(self, event: Any) -> None:
+        self.root.focus_set()
+        self.save_data()
 
     def setup_languages(self) -> None:
         self.lang_map = {
@@ -349,6 +378,40 @@ class Player:
 
         self.lang_map_rev = {v: k for k, v in self.lang_map.items()}
         self.display_languages = list(self.lang_map.values())
+
+    def load_data(self) -> dict[str, str]:
+        config_dir = os.path.dirname(data.data_file)
+
+        if not os.path.exists(config_dir):
+            os.makedirs(config_dir)
+
+        if os.path.exists(data.data_file):
+            try:
+                with open(data.data_file, "r", encoding="utf-8") as f:
+                    return cast(dict[str, str], json.load(f))
+            except Exception as e:
+                utils.print(f"Failed to load data: {e}")
+
+        return {}
+
+    def save_data(self) -> None:
+        config_dir = os.path.dirname(data.data_file)
+
+        if not os.path.exists(config_dir):
+            os.makedirs(config_dir)
+
+        try:
+            with open(data.data_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "country": self.country_var.get(),
+                        "language": self.selected_lang.get(),
+                    },
+                    f,
+                    indent=4,
+                )
+        except Exception as e:
+            utils.print(f"Failed to save data: {e}")
 
     def load_history(self) -> list[dict[str, Any]]:
         config_dir = os.path.dirname(data.history_file)
@@ -479,7 +542,7 @@ class Player:
             self.root.after(0, self.reset_button)
 
             self.root.after(
-                0, lambda: self.name_label.config(text="No channels for this filter")
+                0, lambda: self.show_info_message("No channels for this filter")
             )
 
             return
@@ -512,8 +575,7 @@ class Player:
             self.root.after(0, self.reset_button)
 
             self.root.after(
-                0,
-                lambda: self.name_label.config(text="Could not find a working stream."),
+                0, lambda: self.show_info_message("Could not find a working stream.")
             )
 
     def prepare_switch(self, channel: dict[str, Any]) -> None:
@@ -531,8 +593,8 @@ class Player:
             if self.stall_retries < data.max_retries:
                 self.stall_retries += 1
 
-                self.name_label.config(
-                    text=f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
+                self.show_info_message(
+                    f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
                 )
 
                 next_idx = 0
@@ -553,8 +615,8 @@ class Player:
 
                 self.players[next_idx].stop()
 
-                self.name_label.config(
-                    text=f"Stream stalled {data.max_retries} times. Roll again."
+                self.show_info_message(
+                    f"Stream stalled {data.max_retries} times. Roll again."
                 )
 
     def commit_switch(self, ready_idx: int) -> None:
@@ -581,7 +643,8 @@ class Player:
             return
 
         self.current_url = self.pending_channel["url"]
-        self.name_label.config(text=self.pending_channel["name"])
+        self.current_channel_name = self.pending_channel["name"]
+        self.restore_channel_name()
         self.play_btn.config(state=tk.NORMAL, text=data.roll_text)
 
         self.history = [

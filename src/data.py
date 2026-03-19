@@ -14,6 +14,7 @@ class Data:
         self.cache_countries = "/tmp/iptv_countries.json"
         self.cache_expiry_seconds = 86400
         self.history_file = os.path.expanduser(f"~/.config/{info.name}/history.json")
+        self.data_file = os.path.expanduser(f"~/.config/{info.name}/data.json")
         self.title = info.full_name
         self.tuning_timeout = 4000
         self.bg_color = "#0f0f17"

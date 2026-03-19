@@ -63,11 +63,12 @@ def get_channels_data() -> list[dict[str, Any]]:
         if ch_id:
             if ch_id in channel_dict:
                 ch_info = channel_dict[ch_id]
-                langs = []
+                langs = ch_info.get("languages") or []
 
                 if feed_id:
                     if feed_id in feed_dict:
-                        langs = feed_dict[feed_id].get("languages", [])
+                        feed_langs = feed_dict[feed_id].get("languages") or []
+                        langs = list(set(langs + feed_langs))
 
                 c_code = ch_info.get("country") or ""
                 c_name = country_dict.get(c_code.lower()) or ""
