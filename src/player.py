@@ -24,6 +24,7 @@ class Player:
         self.history = self.load_history()
         self.sidebar_visible = False
         self.stall_retries = 0
+        self.placeholder_text = "e.g. cr or costa rica"
         self.root.title(data.title)
         self.root.geometry("1000x600")
         self.root.configure(bg=data.bg_color)
@@ -50,8 +51,22 @@ class Player:
             font=data.font_ui,
             width=15,
         )
-
         self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.country_var = tk.StringVar(value=self.placeholder_text)
+
+        self.country_entry = tk.Entry(
+            self.top_frame,
+            textvariable=self.country_var,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg="gray",
+            insertbackground=data.fg_color,
+            width=22,
+        )
+        self.country_entry.pack(side=tk.LEFT, padx=(0, 10))
+        self.country_entry.bind("<FocusIn>", self.on_country_focus_in)
+        self.country_entry.bind("<FocusOut>", self.on_country_focus_out)
 
         self.name_label = tk.Label(
             self.top_frame,
@@ -60,8 +75,8 @@ class Player:
             bg=data.bg_color,
             fg=data.fg_color,
         )
-
         self.name_label.pack(side=tk.LEFT)
+
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT)
 
@@ -80,12 +95,11 @@ class Player:
             bd=0,
             padx=10,
         )
-
         self.copy_btn.pack(side=tk.LEFT, padx=5)
 
         self.paste_btn = tk.Button(
             self.btn_frame,
-            text="📥 Paste",
+            text="📝 Paste",
             command=self.paste_link,
             font=data.font_ui,
             bg=data.btn_bg,
@@ -98,7 +112,6 @@ class Player:
             bd=0,
             padx=10,
         )
-
         self.paste_btn.pack(side=tk.LEFT, padx=5)
 
         self.history_btn = tk.Button(
@@ -116,7 +129,6 @@ class Player:
             bd=0,
             padx=10,
         )
-
         self.history_btn.pack(side=tk.LEFT, padx=5)
 
         self.play_btn = tk.Button(
@@ -134,8 +146,8 @@ class Player:
             bd=0,
             padx=10,
         )
-
         self.play_btn.pack(side=tk.LEFT, padx=5)
+
         self.main_content_frame = tk.Frame(root, bg=data.bg_color)
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
         self.video_container = tk.Frame(self.main_content_frame, bg="black")
@@ -159,7 +171,6 @@ class Player:
             selectforeground=data.fg_color,
             activestyle="none"
         )
-
         self.scrollbar = tk.Scrollbar(self.sidebar_frame, command=self.history_listbox.yview, bg=data.bg_color)
         self.history_listbox.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -202,6 +213,16 @@ class Player:
             last_channel = self.history[-1]
             self.root.after(500, self.play_specific, last_channel)
 
+    def on_country_focus_in(self, event):
+        if self.country_var.get() == self.placeholder_text:
+            self.country_var.set("")
+            self.country_entry.config(fg=data.fg_color)
+
+    def on_country_focus_out(self, event):
+        if self.country_var.get().strip() == "":
+            self.country_var.set(self.placeholder_text)
+            self.country_entry.config(fg="gray")
+
     def setup_languages(self):
         self.lang_map = {
             "eng": "English",
@@ -221,7 +242,6 @@ class Player:
             "tur": "Turkish",
             "pol": "Polish",
         }
-
         self.lang_map_rev = {v: k for k, v in self.lang_map.items()}
         self.display_languages = list(self.lang_map.values())
 
@@ -237,6 +257,7 @@ class Player:
                     json.dump([], f)
             except Exception as e:
                 utils.print(f"Failed to create history file: {e}")
+
         try:
             with open(data.history_file, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -321,17 +342,33 @@ class Player:
 
         if sel_lang != data.any_language:
             target_code = self.lang_map_rev.get(sel_lang, sel_lang)
-            valid_channels = []
+            filtered_by_lang = []
 
             for ch in self.channels:
                 langs = ch.get("languages", [])
 
-                if ((target_code in langs) and (len(langs) <= 2)):
-                    valid_channels.append(ch)
+                if (target_code in langs) and (len(langs) <= 2):
+                    filtered_by_lang.append(ch)
+
+            valid_channels = filtered_by_lang
+
+        target_country = self.country_var.get().strip().lower()
+
+        if (target_country != "") and (target_country != self.placeholder_text):
+            filtered_by_country = []
+
+            for ch in valid_channels:
+                c_code = ch.get("country_code", "").lower()
+                c_name = ch.get("country_name", "").lower()
+
+                if (target_country == c_code) or (target_country in c_name):
+                    filtered_by_country.append(ch)
+
+            valid_channels = filtered_by_country
 
         if len(valid_channels) == 0:
             self.root.after(0, self.reset_button)
-            self.root.after(0, lambda: self.name_label.config(text="No channels for this language"))
+            self.root.after(0, lambda: self.name_label.config(text="No channels for this filter"))
             return
 
         while working_channel is None:
@@ -349,7 +386,7 @@ class Player:
                 )
 
                 with urllib.request.urlopen(req, timeout=3) as response:
-                    if ((response.status == 200) or (response.status == 206)):
+                    if (response.status == 200) or (response.status == 206):
                         working_channel = candidate
             except Exception:
                 continue

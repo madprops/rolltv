@@ -39,6 +39,7 @@ def get_channels_data():
     channels_raw = fetch_json(data.channels_url, data.cache_channels)
     streams_raw = fetch_json(data.streams_url, data.cache_streams)
     feeds_raw = fetch_json(data.feeds_url, data.cache_feeds)
+    countries_raw = fetch_json(data.countries_url, data.cache_countries)
     channel_dict = {}
 
     for ch in channels_raw:
@@ -47,6 +48,10 @@ def get_channels_data():
 
     for f in feeds_raw:
         feed_dict[f["id"]] = f
+    country_dict = {}
+
+    for c in countries_raw:
+        country_dict[c.get("code", "").lower()] = c.get("name", "").lower()
     merged = []
 
     for st in streams_raw:
@@ -62,7 +67,9 @@ def get_channels_data():
                     if feed_id in feed_dict:
                         langs = feed_dict[feed_id].get("languages", [])
 
-                merged.append({"name": ch_info.get("name", "Unknown"), "url": st.get("url", ""), "languages": langs})
+                c_code = ch_info.get("country", "")
+                c_name = country_dict.get(c_code.lower(), "")
+                merged.append({"name": ch_info.get("name", "Unknown"), "url": st.get("url", ""), "languages": langs, "country_code": c_code, "country_name": c_name})
     return merged
 
 def main():
