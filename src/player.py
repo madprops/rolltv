@@ -139,7 +139,6 @@ class Player:
         self.root.bind("<Return>", self.on_return_key)
         self.root.bind("<Key>", self.on_global_key_press)
         self.root.bind_all("<Button-1>", self.on_global_click, add="+")
-        self.root.bind("<Configure>", self.schedule_globe_update, add="+")
 
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
@@ -924,24 +923,11 @@ class Player:
             return
 
         self.globe_visible = True
-        self.video_container.pack_forget()
-
-        self.globe_placeholder = tk.Frame(self.main_content_frame, bg=data.bg_color)
-        self.globe_placeholder.place(relx=0, rely=0, relwidth=1, relheight=0.7)
-        self.video_container.place(relx=0, rely=0.7, relwidth=1, relheight=0.3)
-
-        self.root.update_idletasks()
-        x = self.globe_placeholder.winfo_rootx()
-        y = self.globe_placeholder.winfo_rooty()
-        w = self.globe_placeholder.winfo_width()
-        h = self.globe_placeholder.winfo_height()
 
         script_path = os.path.join(os.path.dirname(__file__), "globe.py")
-        cmd = [sys.executable, script_path, str(x), str(y), str(w), str(h), info.name]
-        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        cmd = [sys.executable, script_path, info.name]
+        self.globe_process = subprocess.Popen(cmd)
         self.check_globe_process()
-        self.root.after(200, self.update_globe_position)
-        self.root.after(600, self.update_globe_position)
 
     def hide_globe(self) -> None:
         if not self.globe_visible:
@@ -955,37 +941,12 @@ class Player:
                 pass
             self.globe_process = None
 
-        if hasattr(self, 'globe_placeholder'):
-            self.globe_placeholder.destroy()
-
-        self.video_container.place_forget()
-        self.video_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
     def set_country_from_globe(self, country_name: str) -> None:
         self.country_var.set(country_name)
         self.country_entry.config(fg=data.fg_color)
         self.on_country_var_change()
         self.hide_globe()
         self.play_random()
-
-    def schedule_globe_update(self, event: Any = None) -> None:
-        if self.globe_visible:
-            if hasattr(self, '_globe_update_job') and self._globe_update_job:
-                self.root.after_cancel(self._globe_update_job)
-            self._globe_update_job = self.root.after(10, self.update_globe_position)
-
-    def update_globe_position(self) -> None:
-        self._globe_update_job = None
-        if self.globe_visible and self.globe_process and self.globe_process.stdin:
-            x = self.globe_placeholder.winfo_rootx()
-            y = self.globe_placeholder.winfo_rooty()
-            w = self.globe_placeholder.winfo_width()
-            h = self.globe_placeholder.winfo_height()
-            try:
-                self.globe_process.stdin.write(f"{x},{y},{w},{h}\n".encode("utf-8"))
-                self.globe_process.stdin.flush()
-            except Exception:
-                pass
 
     def check_globe_process(self) -> None:
         if self.globe_visible and self.globe_process:

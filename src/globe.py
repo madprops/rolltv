@@ -4,8 +4,8 @@ import socket
 import tempfile
 import hashlib
 import os
-import threading
 import logging
+import inspect
 
 
 class Api:
@@ -29,18 +29,6 @@ class Api:
             pass
 
         webview.windows[0].destroy()
-
-
-def stdin_listener(window):
-    for line in sys.stdin:
-        try:
-            parts = line.strip().split(',')
-            if len(parts) == 4:
-                x, y, w, h = map(int, parts)
-                window.resize(w, h)
-                window.move(x, y)
-        except Exception:
-            pass
 
 
 html = """
@@ -102,28 +90,35 @@ html = """
 """
 
 if __name__ == '__main__':
-    x, y, w, h = 0, 0, 800, 600
     app_name = "rolltv"
 
-    if len(sys.argv) >= 6:
-        x, y, w, h = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
-        app_name = sys.argv[5]
+    if len(sys.argv) >= 2:
+        app_name = sys.argv[1]
 
     api = Api(app_name)
-    window = webview.create_window(
-        'World',
-        html=html,
-        js_api=api,
-        width=w,
-        height=h,
-        x=x,
-        y=y,
-        frameless=True,
-        background_color='#1A1B26'
-    )
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(script_dir, "icon.png")
+
+    kwargs = {
+        'title': 'World',
+        'html': html,
+        'js_api': api,
+        'width': 800,
+        'height': 600,
+        'background_color': '#1A1B26'
+    }
+
+    sig = inspect.signature(webview.create_window)
+    if 'icon' in sig.parameters:
+        kwargs['icon'] = icon_path
+
+    window = webview.create_window(**kwargs)
 
     # Suppress pywebview's internal backend fallback warnings (e.g. GTK not found)
     logging.getLogger('pywebview').setLevel(logging.CRITICAL)
 
-    threading.Thread(target=stdin_listener, args=(window,), daemon=True).start()
-    webview.start()
+    try:
+        webview.start(icon=icon_path)
+    except TypeError:
+        webview.start()
