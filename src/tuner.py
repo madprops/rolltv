@@ -74,7 +74,7 @@ class Tuner:
         next_idx = 1 if self.player.active_idx == 0 else 0
         self.player.player_search_ids[next_idx] = -1
         self.player.players[next_idx].stop()
-        self.player.schedule_restore_channel_name()
+        self.player.restore_channel_name()
 
     def find_live_stream(self, my_search_id: int) -> None:
         working_channel = None
