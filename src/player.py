@@ -242,7 +242,7 @@ class Player:
             font=data.font_ui,
             relief=tk.FLAT,
             highlightthickness=0,
-            selectbackground=data.btn_active,
+            selectbackground=data.list_select_bg,
             selectforeground=data.fg_color,
             activestyle="none",
         )
@@ -288,6 +288,7 @@ class Player:
         self.root.bind("<Up>", self.on_up_arrow)
         self.root.bind("<Down>", self.on_down_arrow)
         self.root.bind("<Return>", self.on_return_key)
+        self.root.bind("<Key>", self.on_global_key_press)
 
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
@@ -382,11 +383,37 @@ class Player:
             self.history_filter_var.set(self.history_filter_placeholder)
             self.history_filter_entry.config(fg="gray")
 
+    def on_global_key_press(self, event: Any) -> str | None:
+        if not self.sidebar_visible:
+            return None
+
+        focused = self.root.focus_get()
+        if focused in (self.country_entry, self.history_filter_entry, self.lang_cb):
+            return None
+
+        if getattr(event, "char", "") and event.char.isprintable():
+            self.history_filter_entry.focus_set()
+            if self.history_filter_var.get() == self.history_filter_placeholder:
+                self.history_filter_var.set("")
+                self.history_filter_entry.config(fg=data.fg_color)
+            self.history_filter_entry.insert(tk.END, event.char)
+            return "break"
+        elif getattr(event, "keysym", "") == "BackSpace":
+            self.history_filter_entry.focus_set()
+            if self.history_filter_var.get() != self.history_filter_placeholder:
+                current = self.history_filter_entry.get()
+                if len(current) > 0:
+                    self.history_filter_entry.delete(len(current) - 1, tk.END)
+            return "break"
+
+        return None
+
     def on_up_arrow(self, event: Any) -> str | None:
         if self.sidebar_visible:
             if self.history_active_index > 0:
                 self.history_active_index -= 1
                 self.draw_history_selection()
+
             return "break"
         return None
 
@@ -395,6 +422,7 @@ class Player:
             if self.history_active_index < len(self.filtered_history) - 1:
                 self.history_active_index += 1
                 self.draw_history_selection()
+
             return "break"
         return None
 
@@ -408,7 +436,6 @@ class Player:
                 ch = self.filtered_history[self.history_active_index]
                 self.root.focus_set()
                 self.root.after(0, self.play_specific, ch)
-                self.hide_history()
             return "break"
         return None
 
@@ -534,6 +561,11 @@ class Player:
             self.show_history()
 
     def update_sidebar(self, *args: Any) -> None:
+        active_url = None
+
+        if len(self.filtered_history) > self.history_active_index >= 0:
+            active_url = self.filtered_history[self.history_active_index]["url"]
+
         self.history_listbox.delete(0, tk.END)
         self.filtered_history = []
         filter_text = self.history_filter_var.get().lower()
@@ -546,16 +578,27 @@ class Player:
                 self.filtered_history.append(ch)
                 self.history_listbox.insert(tk.END, ch["name"])
 
-        self.history_active_index = 0
+        new_active_index = 0
+
+        if active_url:
+            for i, ch in enumerate(self.filtered_history):
+                if ch["url"] == active_url:
+                    new_active_index = i
+                    break
+
+        self.history_active_index = new_active_index
         self.draw_history_selection()
 
     def draw_history_selection(self) -> None:
         self.history_listbox.selection_clear(0, tk.END)
+
         if len(self.filtered_history) > 0:
             if self.history_active_index >= len(self.filtered_history):
                 self.history_active_index = len(self.filtered_history) - 1
+
             if self.history_active_index < 0:
                 self.history_active_index = 0
+
             self.history_listbox.selection_set(self.history_active_index)
             self.history_listbox.see(self.history_active_index)
 
