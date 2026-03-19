@@ -1096,6 +1096,7 @@ class Player:
         )
 
         self.player_search_ids[next_idx] = search_id
+        self.players[next_idx].mute = True
         self.players[next_idx].play(channel["url"])
 
     def handle_timeout(self, search_id: int) -> None:
@@ -1167,6 +1168,7 @@ class Player:
 
         self.active_idx = ready_idx
         self.frames[ready_idx].tkraise()
+        self.players[ready_idx].mute = False
         old_idx = 0
 
         if ready_idx == 0:
