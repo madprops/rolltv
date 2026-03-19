@@ -292,7 +292,7 @@ class Player:
         self.active_idx = 0
         self.frames[0].tkraise()
         self.is_fullscreen = False
-        self.root.bind("<Escape>", self.exit_fullscreen)
+        self.root.bind("<Escape>", self.handle_escape)
         self.root.bind("<KeyPress-Up>", self.on_up_press)
         self.root.bind("<KeyRelease-Up>", self.on_up_release)
         self.root.bind("<KeyPress-Down>", self.on_down_press)
@@ -365,7 +365,7 @@ class Player:
 
         @player.on_key_press("ESC")  # type: ignore
         def _on_esc() -> None:
-            self.root.after(0, lambda: self.exit_fullscreen(None))
+            self.root.after(0, lambda: self.handle_escape(None))
 
     def toggle_maximize(self, event: Any = None) -> None:
         self.is_fullscreen = not self.is_fullscreen
@@ -385,7 +385,32 @@ class Player:
                     side=tk.RIGHT, fill=tk.Y, before=self.video_container
                 )
 
-    def exit_fullscreen(self, event: Any = None) -> None:
+    def handle_escape(self, event: Any = None) -> None:
+        focused = self.root.focus_get()
+
+        if focused == self.country_entry:
+            current_country = self.country_var.get()
+
+            if current_country != self.country_placeholder and current_country != "":
+                self.country_var.set("")
+            else:
+                self.root.focus_set()
+            return
+
+        if self.sidebar_visible and not self.is_fullscreen:
+            current_filter = self.history_filter_var.get()
+
+            if current_filter != self.history_filter_placeholder and current_filter != "":
+                if focused == self.history_filter_entry:
+                    self.history_filter_var.set("")
+                else:
+                    self.history_filter_var.set(self.history_filter_placeholder)
+                    self.history_filter_entry.config(fg="gray")
+                return
+            elif focused == self.history_filter_entry:
+                self.root.focus_set()
+                return
+
         if self.is_fullscreen:
             self.toggle_maximize()
 
