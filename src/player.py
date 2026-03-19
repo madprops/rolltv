@@ -6,6 +6,7 @@ import socket
 import hashlib
 import tempfile
 import threading
+import emoji
 import subprocess
 import tkinter as tk
 import urllib.request
