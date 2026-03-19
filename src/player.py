@@ -363,16 +363,27 @@ class Player:
         self.history_filter_entry.bind("<FocusIn>", self.on_history_filter_focus_in)
         self.history_filter_entry.bind("<FocusOut>", self.on_history_filter_focus_out)
 
-        self.history_listbox = tk.Listbox(
-            self.sidebar_frame,
-            bg=data.btn_bg,
-            fg=data.fg_color,
+        style.configure(
+            "History.Treeview",
+            background=data.btn_bg,
+            foreground=data.fg_color,
+            fieldbackground=data.btn_bg,
+            borderwidth=0,
             font=data.font_ui,
-            relief=tk.FLAT,
-            highlightthickness=0,
-            selectbackground=data.list_select_bg,
-            selectforeground=data.fg_color,
-            activestyle="none",
+            rowheight=24,
+        )
+
+        style.map(
+            "History.Treeview",
+            background=[("selected", data.list_select_bg)],
+            foreground=[("selected", data.fg_color)],
+        )
+
+        self.history_listbox = ttk.Treeview(
+            self.sidebar_frame,
+            style="History.Treeview",
+            show="tree",
+            selectmode="browse",
         )
 
         self.scrollbar = tk.Scrollbar(
@@ -976,17 +987,44 @@ class Player:
         if len(self.filtered_history) > self.history_active_index >= 0:
             active_url = self.filtered_history[self.history_active_index]["url"]
 
-        self.history_listbox.delete(0, tk.END)
+        self.history_listbox.delete(*self.history_listbox.get_children())
         self.filtered_history = []
         filter_text = self.history_filter_var.get().lower()
 
         if filter_text == self.history_filter_placeholder.lower():
             filter_text = ""
 
+        if not hasattr(self, "flag_images"):
+            self.flag_images = {}
+
         for ch in reversed(self.history):
-            if filter_text in ch["name"].lower():
+            name_match = filter_text in ch["name"].lower()
+            country_name_match = filter_text in ch.get("country_name", "").lower()
+
+            if name_match or country_name_match:
                 self.filtered_history.append(ch)
-                self.history_listbox.insert(tk.END, ch["name"])
+
+                img = None
+                c_code = ch.get("country_code", "")
+
+                if isinstance(c_code, str) and len(c_code) == 2:
+                    c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
+                    flag_path = os.path.expanduser(f"~/.config/{info.name}/flags/{c_code}.png")
+
+                    if os.path.exists(flag_path):
+                        if c_code not in self.flag_images:
+                            try:
+                                self.flag_images[c_code] = tk.PhotoImage(file=flag_path)
+                            except Exception:
+                                pass
+                        img = self.flag_images.get(c_code)
+                    else:
+                        threading.Thread(target=self.fetch_flag_only, args=(c_code,), daemon=True).start()
+
+                if img:
+                    self.history_listbox.insert("", tk.END, text=f" {ch['name']}", image=img)
+                else:
+                    self.history_listbox.insert("", tk.END, text=f" {ch['name']}")
 
         new_active_index = 0
 
@@ -1000,7 +1038,10 @@ class Player:
         self.draw_history_selection()
 
     def draw_history_selection(self) -> None:
-        self.history_listbox.selection_clear(0, tk.END)
+        sel = self.history_listbox.selection()
+
+        if sel:
+            self.history_listbox.selection_remove(*sel)
 
         if len(self.filtered_history) > 0:
             if self.history_active_index >= len(self.filtered_history):
@@ -1009,22 +1050,26 @@ class Player:
             if self.history_active_index < 0:
                 self.history_active_index = 0
 
-            self.history_listbox.selection_set(self.history_active_index)
-            self.history_listbox.see(self.history_active_index)
+            children = self.history_listbox.get_children()
+
+            if self.history_active_index < len(children):
+                item_id = children[self.history_active_index]
+                self.history_listbox.selection_set(item_id)
+                self.history_listbox.see(item_id)
 
     def on_history_click(self, event: Any) -> str:
-        index = self.history_listbox.nearest(event.y)  # type: ignore
+        item_id = self.history_listbox.identify_row(event.y)
 
-        if index >= 0:
-            bbox = self.history_listbox.bbox(index)
-
-            if bbox:
-                if bbox[1] <= event.y <= bbox[1] + bbox[3]:
-                    if index < len(self.filtered_history):
-                        self.history_active_index = index
-                        self.draw_history_selection()
-                        ch = self.filtered_history[index]
-                        self.root.after(0, self.play_specific, ch)
+        if item_id:
+            children = self.history_listbox.get_children()
+            try:
+                index = children.index(item_id)
+                self.history_active_index = index
+                self.draw_history_selection()
+                ch = self.filtered_history[index]
+                self.root.after(0, self.play_specific, ch)
+            except ValueError:
+                pass
 
         return "break"
 
@@ -1352,6 +1397,33 @@ class Player:
     def clear_flag_image(self) -> None:
         self.current_flag_img = None
         self.name_label.config(image="", compound=tk.NONE)
+
+    def fetch_flag_only(self, c_code: str) -> None:
+        flag_dir = os.path.expanduser(f"~/.config/{info.name}/flags")
+        os.makedirs(flag_dir, exist_ok=True)
+        flag_path = os.path.join(flag_dir, f"{c_code}.png")
+
+        if not os.path.exists(flag_path):
+            try:
+                url = f"https://flagcdn.com/24x18/{c_code}.png"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=3) as response:
+                    if response.status == 200:
+                        with open(flag_path, "wb") as f:
+                            f.write(response.read())
+
+                        def update_images() -> None:
+                            try:
+                                if not hasattr(self, "flag_images"):
+                                    self.flag_images = {}
+                                self.flag_images[c_code] = tk.PhotoImage(file=flag_path)
+                            except Exception:
+                                return
+                            self.update_sidebar()
+
+                        self.root.after(0, update_images)
+            except Exception:
+                pass
 
     def reset_button(self) -> None:
         self.tuning = False
