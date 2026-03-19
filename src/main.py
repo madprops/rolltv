@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
-import tkinter as tk
-import urllib.request
-import random
 import os
 import time
-import threading
-import subprocess
-import sys
-import mpv
-import json
+import tkinter as tk
+import urllib.request
 
 from data import data
 from player import Player
@@ -44,6 +38,7 @@ def fetch_channels():
         if file_age < data.cache_expiry_seconds:
             with open(data.cache_file, "r", encoding="utf-8") as f:
                 lines = f.read().splitlines()
+
             return parse_m3u(lines)
 
     print(f"Fetching latest playlist from {data.iptv_m3u_url}...")
