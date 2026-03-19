@@ -39,16 +39,16 @@ class Player:
 
         self.top_frame = tk.Frame(root, bg=data.bg_color)
         self.top_frame.pack(fill=tk.X, pady=10, padx=15)
-        self.languages = self.extract_languages()
-        self.selected_lang = tk.StringVar(value="Any Language")
+        self.setup_languages()
+        self.selected_lang = tk.StringVar(value=data.any_language)
 
         self.lang_cb = ttk.Combobox(
             self.top_frame,
             textvariable=self.selected_lang,
-            values=["Any Language"] + self.languages,
+            values=[data.any_language] + self.display_languages,
             state="readonly",
             font=data.font_ui,
-            width=15
+            width=15,
         )
 
         self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
@@ -58,7 +58,7 @@ class Player:
             text="Click the dice to tune in",
             font=data.font_ui,
             bg=data.bg_color,
-            fg=data.fg_color
+            fg=data.fg_color,
         )
 
         self.name_label.pack(side=tk.LEFT)
@@ -96,7 +96,7 @@ class Player:
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10
+            padx=10,
         )
 
         self.paste_btn.pack(side=tk.LEFT, padx=5)
@@ -114,7 +114,7 @@ class Player:
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10
+            padx=10,
         )
 
         self.history_btn.pack(side=tk.LEFT, padx=5)
@@ -132,7 +132,7 @@ class Player:
             highlightbackground=data.btn_border,
             highlightthickness=1,
             bd=0,
-            padx=10
+            padx=10,
         )
 
         self.play_btn.pack(side=tk.LEFT, padx=5)
@@ -202,30 +202,28 @@ class Player:
             last_channel = self.history[-1]
             self.root.after(500, self.play_specific, last_channel)
 
-    def extract_languages(self):
+    def setup_languages(self):
         self.lang_map = {
-            "eng": "English", "spa": "Spanish", "fra": "French",
-            "deu": "German", "zho": "Chinese", "jpn": "Japanese",
-            "rus": "Russian", "por": "Portuguese", "ita": "Italian",
-            "ara": "Arabic", "hin": "Hindi", "kor": "Korean",
-            "nld": "Dutch", "tur": "Turkish", "pol": "Polish"
+            "eng": "English",
+            "spa": "Spanish",
+            "zho": "Chinese",
+            "rus": "Russian",
+            "swe": "Swedish",
+            "fra": "French",
+            "deu": "German",
+            "jpn": "Japanese",
+            "por": "Portuguese",
+            "ita": "Italian",
+            "ara": "Arabic",
+            "hin": "Hindi",
+            "kor": "Korean",
+            "nld": "Dutch",
+            "tur": "Turkish",
+            "pol": "Polish",
         }
 
         self.lang_map_rev = {v: k for k, v in self.lang_map.items()}
-
-        langs = set()
-        for ch in self.channels:
-            for l in ch.get("languages", []):
-                langs.add(l)
-
-        mapped_langs = set()
-        for l in langs:
-            if l in self.lang_map:
-                mapped_langs.add(self.lang_map[l])
-            else:
-                mapped_langs.add(l)
-
-        return sorted(list(mapped_langs))
+        self.display_languages = list(self.lang_map.values())
 
     def load_history(self):
         config_dir = os.path.dirname(data.history_file)
@@ -321,7 +319,7 @@ class Player:
         sel_lang = self.selected_lang.get()
         valid_channels = self.channels
 
-        if sel_lang != "Any Language":
+        if sel_lang != data.any_language:
             target_code = self.lang_map_rev.get(sel_lang, sel_lang)
             valid_channels = [ch for ch in self.channels if target_code in ch.get("languages", [])]
 

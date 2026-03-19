@@ -19,6 +19,7 @@ class Data:
         self.font_ui = ("Monospace", 12, "bold")
         self.roll_text = "🎲 Roll TV"
         self.max_history = 100
+        self.any_language = "Any Language"
 
 
 data = Data()
