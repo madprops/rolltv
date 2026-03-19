@@ -42,6 +42,35 @@ class Player:
         self.top_frame.pack(fill=tk.X, pady=10, padx=15)
         self.setup_languages()
         self.selected_lang = tk.StringVar(value=data.any_language)
+        style = ttk.Style()
+
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+
+        style.configure(
+            "TCombobox",
+            fieldbackground=data.btn_bg,
+            background=data.btn_bg,
+            foreground=data.fg_color,
+            arrowcolor=data.fg_color,
+            bordercolor=data.btn_border,
+            lightcolor=data.btn_bg,
+            darkcolor=data.btn_bg,
+        )
+
+        style.map(
+            "TCombobox",
+            fieldbackground=[("readonly", data.btn_bg)],
+            selectbackground=[("readonly", data.btn_bg)],
+            selectforeground=[("readonly", data.fg_color)],
+            background=[("readonly", data.btn_bg), ("active", data.btn_active)],
+            bordercolor=[("readonly", data.btn_border)],
+        )
+
+        self.root.option_add("*TCombobox*Listbox.background", data.btn_bg)
+        self.root.option_add("*TCombobox*Listbox.foreground", data.fg_color)
+        self.root.option_add("*TCombobox*Listbox.selectBackground", data.btn_active)
+        self.root.option_add("*TCombobox*Listbox.selectForeground", data.fg_color)
 
         self.lang_cb = ttk.Combobox(
             self.top_frame,
@@ -51,8 +80,9 @@ class Player:
             font=data.font_ui,
             width=15,
         )
-        self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
 
+        self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
+        self.lang_cb.bind("<<ComboboxSelected>>", lambda e: self.root.focus_set())
         self.country_var = tk.StringVar(value=self.placeholder_text)
 
         self.country_entry = tk.Entry(
@@ -63,7 +93,13 @@ class Player:
             fg="gray",
             insertbackground=data.fg_color,
             width=22,
+            relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightcolor=data.btn_border,
+            highlightthickness=1,
+            bd=0,
         )
+
         self.country_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.country_entry.bind("<FocusIn>", self.on_country_focus_in)
         self.country_entry.bind("<FocusOut>", self.on_country_focus_out)
@@ -75,8 +111,8 @@ class Player:
             bg=data.bg_color,
             fg=data.fg_color,
         )
-        self.name_label.pack(side=tk.LEFT)
 
+        self.name_label.pack(side=tk.LEFT)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT)
 
@@ -95,6 +131,7 @@ class Player:
             bd=0,
             padx=10,
         )
+
         self.copy_btn.pack(side=tk.LEFT, padx=5)
 
         self.paste_btn = tk.Button(
@@ -112,6 +149,7 @@ class Player:
             bd=0,
             padx=10,
         )
+
         self.paste_btn.pack(side=tk.LEFT, padx=5)
 
         self.history_btn = tk.Button(
@@ -129,6 +167,7 @@ class Player:
             bd=0,
             padx=10,
         )
+
         self.history_btn.pack(side=tk.LEFT, padx=5)
 
         self.play_btn = tk.Button(
@@ -146,8 +185,8 @@ class Player:
             bd=0,
             padx=10,
         )
-        self.play_btn.pack(side=tk.LEFT, padx=5)
 
+        self.play_btn.pack(side=tk.LEFT, padx=5)
         self.main_content_frame = tk.Frame(root, bg=data.bg_color)
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
         self.video_container = tk.Frame(self.main_content_frame, bg="black")
@@ -182,6 +221,7 @@ class Player:
 
         self.history_listbox.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
         self.history_listbox.pack(
             side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10
         )
@@ -253,6 +293,7 @@ class Player:
             "tur": "Turkish",
             "pol": "Polish",
         }
+
         self.lang_map_rev = {v: k for k, v in self.lang_map.items()}
         self.display_languages = list(self.lang_map.values())
 
