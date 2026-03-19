@@ -15,18 +15,11 @@ class Api:
     def select_country(self, name):
         try:
             if os.name == "posix":
-                socket_path = os.path.join(
-                    tempfile.gettempdir(), f"{self.app_name}_ipc.sock"
-                )
-
+                socket_path = os.path.join(tempfile.gettempdir(), f"{self.app_name}_ipc.sock")
                 client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 client.connect(socket_path)
             else:
-                port = (
-                    50000
-                    + int(hashlib.md5(self.app_name.encode()).hexdigest(), 16) % 10000
-                )
-
+                port = 50000 + int(hashlib.md5(self.app_name.encode()).hexdigest(), 16) % 10000
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client.connect(("127.0.0.1", port))
 
@@ -40,7 +33,7 @@ def stdin_listener(window):
     try:
         for line in sys.stdin:
             try:
-                parts = line.strip().split(",")
+                parts = line.strip().split(',')
 
                 if len(parts) == 4:
                     x, y, w, h = map(int, parts)
@@ -51,7 +44,10 @@ def stdin_listener(window):
     except Exception:
         pass
 
-    os._exit(0)
+    try:
+        window.destroy()
+    except Exception:
+        pass
 
 
 html = """
@@ -60,17 +56,7 @@ html = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { margin: 0; padding: 0; background-color: #1A1B26; overflow: hidden; font-family: sans-serif; }
-        #countryLabel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: #E2E2E2;
-            font-size: 20px;
-            pointer-events: none;
-        }
-    </style>
+    <style> body { margin: 0; padding: 0; background-color: #1A1B26; overflow: hidden; } </style>
     <script>
         console.warn = function() {};
         console.log = function() {};
@@ -80,7 +66,6 @@ html = """
 </head>
 <body>
     <div id="globeViz"></div>
-    <div id="countryLabel"></div>
     <script>
         fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
             .then(res => res.json())
@@ -99,12 +84,12 @@ html = """
                     .polygonSideColor(() => '#1F2335')
                     .polygonStrokeColor(() => '#7AA2F7')
                     .onPolygonHover(hoverD => {
-                        world.polygonCapColor(d => d === clickedD ? 'lightgreen' : (d === hoverD ? '#7AA2F7' : '#33467C'));
-                        document.getElementById('countryLabel').innerText = hoverD ? hoverD.properties.ADMIN : '';
+                        world.polygonAltitude(d => d === hoverD ? 0.12 : 0.01)
+                             .polygonCapColor(d => d === hoverD ? '#7AA2F7' : (d === clickedD ? 'lightgreen' : '#33467C'));
                     })
                     .onPolygonClick(clickedPoly => {
                         clickedD = clickedPoly;
-                        world.polygonCapColor(d => d === clickedD ? 'lightgreen' : '#33467C');
+                        world.polygonCapColor(d => d === clickedPoly ? '#7AA2F7' : (d === clickedD ? 'lightgreen' : '#33467C'));
 
                         if (window.pywebview) {
                             window.pywebview.api.select_country(clickedPoly.properties.ADMIN);
@@ -133,13 +118,7 @@ if __name__ == "__main__":
     app_name = "rolltv"
 
     if len(sys.argv) >= 6:
-        x, y, w, h = (
-            int(sys.argv[1]),
-            int(sys.argv[2]),
-            int(sys.argv[3]),
-            int(sys.argv[4]),
-        )
-
+        x, y, w, h = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
         app_name = sys.argv[5]
 
     api = Api(app_name)
@@ -152,12 +131,12 @@ if __name__ == "__main__":
         height=h,
         x=x,
         y=y,
-        frameless=False,
-        on_top=False,
-        background_color="#1A1B26",
+        frameless=True,
+        easy_drag=False,
+        on_top=True,
+        background_color="#1A1B26"
     )
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    icon_path = os.path.join(script_dir, "icon.png")
     threading.Thread(target=stdin_listener, args=(window,), daemon=True).start()
-    webview.start(icon=icon_path)
+    webview.start()
+    os._exit(0)
