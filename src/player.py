@@ -343,6 +343,9 @@ class Player:
             self.root.after_cancel(self.msg_timeout_id)
         self.msg_timeout_id = self.root.after(3000, self.restore_channel_name)
 
+    def show_status_message(self, text: str) -> None:
+        self.stats_label.config(text=text)
+
     def restore_channel_name(self) -> None:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
@@ -355,7 +358,7 @@ class Player:
 
     def update_stats(self) -> None:
         if self.tuning:
-            self.stats_label.config(text="Tuning...")
+            self.show_info_message("Tuning...")
             return
 
         player = self.players[self.active_idx]
@@ -397,9 +400,9 @@ class Player:
             ac = ac.upper() if isinstance(ac, str) else ac
             codecs = f"{vc} / {ac}"
             stats = f"{res} | {fps_str} | {br_str} | {codecs}"
-            self.stats_label.config(text=stats)
+            self.show_status_message(stats)
         else:
-            self.stats_label.config(text="")
+            self.show_status_message("")
 
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
