@@ -847,6 +847,8 @@ class Player:
                     input=self.current_url.encode("utf-8"),
                     check=True,
                 )
+
+                self.show_message("URL Copied")
             except Exception as e:
                 utils.print(f"Failed to copy to clipboard: {e}")
 
