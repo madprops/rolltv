@@ -21,6 +21,7 @@ class Data:
         self.fg_color = "#00ffcc"
         self.btn_bg = "#1f1f2e"
         self.btn_active = "#2a2a3f"
+        self.info_fg = "#e1e1e1"
         self.list_select_bg = "#444466"
         self.btn_border = "#28283d"
         self.font_ui = ("Monospace", 12, "bold")

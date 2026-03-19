@@ -53,18 +53,32 @@ class Player:
 
         self.top_frame = tk.Frame(root, bg=data.bg_color)
         self.top_frame.pack(fill=tk.X, pady=10, padx=15)
+        self.info_frame = tk.Frame(self.top_frame, bg=data.bg_color)
+        self.info_frame.pack(side=tk.LEFT)
 
         self.name_label = tk.Label(
-            self.top_frame,
+            self.info_frame,
             text=self.current_channel_name,
             font=data.font_ui,
             bg=data.bg_color,
             fg=data.fg_color,
         )
 
-        self.name_label.pack(side=tk.LEFT)
+        self.name_label.pack(anchor=tk.W)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT)
+        self.stats_frame = tk.Frame(root, bg=data.bg_color)
+        self.stats_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        self.stats_label = tk.Label(
+            self.stats_frame,
+            text="",
+            font=("Monospace", 12),
+            bg=data.bg_color,
+            fg=data.info_fg,
+        )
+
+        self.stats_label.pack(anchor=tk.W)
         self.saved_data = self.load_data()
         country_val = self.saved_data.get("country", self.country_placeholder)
         self.country_var = tk.StringVar(value=country_val)
@@ -320,6 +334,8 @@ class Player:
         for player in self.players:
             self.register_player_bindings(player)
 
+        self.update_stats_loop()
+
     def show_info_message(self, text: str) -> None:
         self.name_label.config(text=text)
         if self.msg_timeout_id is not None:
@@ -331,6 +347,44 @@ class Player:
             self.root.after_cancel(self.msg_timeout_id)
         self.msg_timeout_id = None
         self.name_label.config(text=self.current_channel_name)
+
+    def update_stats_loop(self) -> None:
+        self.update_stats()
+        self.root.after(1000, self.update_stats_loop)
+
+    def update_stats(self) -> None:
+        if self.tuning:
+            self.stats_label.config(text="Tuning...")
+            return
+
+        player = self.players[self.active_idx]
+
+        if player and getattr(player, "playback_time", None) is not None:
+            w = getattr(player, "width", None)
+            h = getattr(player, "height", None)
+            res = f"{w}x{h}" if w and h else "Unknown Res"
+
+            fps = getattr(player, "container_fps", None)
+            fps_str = f"{fps:.0f} fps" if fps else "Unknown fps"
+
+            v_br = getattr(player, "video_bitrate", None) or 0
+            a_br = getattr(player, "audio_bitrate", None) or 0
+            tb = v_br + a_br
+
+            if tb > 0:
+                br_str = f"{tb / 1000000:.1f} Mbps" if tb > 1000000 else f"{tb / 1000:.0f} kbps"
+            else:
+                br_str = "Unknown bitrate"
+
+            vc = getattr(player, "video_codec", None) or "No Video"
+            ac = getattr(player, "audio_codec", None) or "No Audio"
+            vc = vc.upper() if isinstance(vc, str) else vc
+            ac = ac.upper() if isinstance(ac, str) else ac
+            codecs = f"{vc} / {ac}"
+            stats = f"{res} | {fps_str} | {br_str} | {codecs}"
+            self.stats_label.config(text=stats)
+        else:
+            self.stats_label.config(text="")
 
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
@@ -373,11 +427,15 @@ class Player:
 
         if self.is_fullscreen:
             self.top_frame.pack_forget()
+            self.stats_frame.pack_forget()
             if self.sidebar_visible:
                 self.sidebar_frame.pack_forget()
         else:
             self.top_frame.pack(
                 fill=tk.X, pady=10, padx=15, before=self.main_content_frame
+            )
+            self.stats_frame.pack(
+                fill=tk.X, padx=15, pady=(0, 10), before=self.main_content_frame
             )
 
             if self.sidebar_visible:
@@ -961,7 +1019,13 @@ class Player:
             return
 
         self.current_url = self.pending_channel["url"]
-        self.current_channel_name = self.pending_channel["name"]
+        c_name = self.pending_channel.get("country_name", "")
+
+        if c_name:
+            self.current_channel_name = f"{self.pending_channel['name']} ({c_name.title()})"
+        else:
+            self.current_channel_name = self.pending_channel["name"]
+
         self.restore_channel_name()
         self.play_btn.config(state=tk.NORMAL, text=data.roll_text)
 
