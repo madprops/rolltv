@@ -35,7 +35,9 @@ class Sidebar:
             anchor="w",
         )
 
-        self.player.sidebar_version_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+        self.player.sidebar_version_label.pack(
+            side=tk.BOTTOM, fill=tk.X, padx=10, pady=10
+        )
 
     def main_menu_item(self, text: str, command: Any) -> None:
         btn = tk.Button(
@@ -69,9 +71,17 @@ class Sidebar:
 
         self.player.sidebar_frame.pack_propagate(False)
         self.player.sidebar_filter_placeholder = "Filter"
-        self.player.history_filter_var = tk.StringVar(value=self.player.sidebar_filter_placeholder)
+
+        self.player.history_filter_var = tk.StringVar(
+            value=self.player.sidebar_filter_placeholder
+        )
+
         self.player.history_filter_var.trace_add("write", self.player.update_sidebar)
-        self.player.country_filter_var = tk.StringVar(value=self.player.sidebar_filter_placeholder)
+
+        self.player.country_filter_var = tk.StringVar(
+            value=self.player.sidebar_filter_placeholder
+        )
+
         self.player.country_filter_var.trace_add("write", self.player.update_sidebar)
 
         self.player.sidebar_filter_frame = tk.Frame(
@@ -96,9 +106,19 @@ class Sidebar:
         )
 
         self.player.sidebar_filter_entry.pack(fill=tk.X, padx=8, pady=4)
-        self.player.sidebar_filter_entry.bind("<FocusIn>", self.player.on_sidebar_filter_focus_in)
-        self.player.sidebar_filter_entry.bind("<FocusOut>", self.player.on_sidebar_filter_focus_out)
-        self.player.sidebar_listbox_frame = tk.Frame(self.player.sidebar_frame, bg=data.btn_bg)
+
+        self.player.sidebar_filter_entry.bind(
+            "<FocusIn>", self.player.on_sidebar_filter_focus_in
+        )
+
+        self.player.sidebar_filter_entry.bind(
+            "<FocusOut>", self.player.on_sidebar_filter_focus_out
+        )
+
+        self.player.sidebar_listbox_frame = tk.Frame(
+            self.player.sidebar_frame, bg=data.btn_bg
+        )
+
         self.player.sidebar_listbox_frame.pack(fill=tk.BOTH, expand=True)
 
         style = ttk.Style()

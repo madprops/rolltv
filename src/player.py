@@ -21,6 +21,18 @@ from sidebar import Sidebar
 
 
 class Player:
+    sidebar_frame: tk.Frame
+    menu_sidebar_frame: tk.Frame
+    sidebar_filter_placeholder: str
+    history_filter_var: tk.StringVar
+    country_filter_var: tk.StringVar
+    sidebar_filter_frame: tk.Frame
+    sidebar_filter_entry: tk.Entry
+    sidebar_listbox_frame: tk.Frame
+    sidebar_listbox: ttk.Treeview
+    scrollbar: tk.Scrollbar
+    sidebar_version_label: tk.Label
+
     def __init__(self, root: tk.Tk, channels: list[dict[str, Any]]) -> None:
         self.root = root
         self.channels = channels
