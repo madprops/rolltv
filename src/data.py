@@ -39,6 +39,7 @@ class Data:
         self.info_restore_delay = 10 * 1000
         self.url_timeout = 3.0
         self.recent_urls = 20
+        self.menu_icon_size = 20
 
 
 data = Data()

@@ -51,35 +51,29 @@ class Player:
         self.root.title(data.title)
         self.root.geometry(f"{data.width}x{data.height}")
         self.root.configure(bg=data.bg_color)
+        self.top_frame = tk.Frame(root, bg=data.bg_color)
+        self.top_frame.pack(fill=tk.X, pady=10)
         script_dir = os.path.dirname(os.path.abspath(__file__))
         icon_path = os.path.join(script_dir, "icon.png")
-        self.menu_icon_photo = None
-        self.menu_icon = None
 
         if os.path.exists(icon_path):
             try:
-                self.menu_icon_photo = tk.PhotoImage(file=icon_path)
-                self.root.iconphoto(True, self.menu_icon_photo)
-                self.menu_icon = self.menu_icon_photo.subsample(5, 5)
-                factor = max(1, self.menu_icon_photo.width() // data.menu_icon_size)
-                self.menu_icon = self.menu_icon_photo.subsample(factor, factor)
+                img = tk.PhotoImage(file=icon_path)
+                self.root.iconphoto(True, img)
             except Exception as e:
                 utils.print(f"Could not load icon: {e}")
 
-        self.top_frame = tk.Frame(root, bg=data.bg_color)
-        self.top_frame.pack(fill=tk.X, pady=10)
+        self.menu_btn = tk.Label(
+            self.top_frame,
+            text=info.full_name,
+            font=data.name_font,
+            fg=data.accent_color,
+            bg=data.bg_color,
+            cursor="hand2",
+        )
 
-        if self.menu_icon:
-            self.menu_btn = tk.Label(
-                self.top_frame,
-                image=self.menu_icon,
-                bg=data.bg_color,
-                cursor="hand2",
-            )
-
-            self.menu_btn.pack(side=tk.LEFT, padx=(20, 0))
-            self.menu_btn.bind("<Button-1>", self.toggle_menu)
-
+        self.menu_btn.pack(side=tk.LEFT, padx=(20, 0))
+        self.menu_btn.bind("<Button-1>", self.toggle_menu)
         self.info_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.info_frame.pack(side=tk.LEFT, padx=(10, 0))
 
@@ -281,6 +275,8 @@ class Player:
             activebackground=data.btn_active,
             activeforeground=data.accent_color,
             relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightthickness=1,
             bd=0,
             padx=12,
             pady=4,
@@ -299,6 +295,8 @@ class Player:
             activebackground=data.btn_active,
             activeforeground=data.accent_color,
             relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightthickness=1,
             bd=0,
             padx=12,
             pady=4,
@@ -306,6 +304,17 @@ class Player:
         )
 
         self.exit_btn.pack(fill=tk.X, padx=10, pady=5)
+
+        self.sidebar_version_label = tk.Label(
+            self.menu_sidebar_frame,
+            text=f"v{info.version}",
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg=data.info_fg,
+            anchor="w",
+        )
+
+        self.sidebar_version_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
         self.video_container = tk.Frame(self.main_content_frame, bg="black")
         self.video_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.video_container.grid_rowconfigure(0, weight=1)
@@ -934,24 +943,23 @@ class Player:
     def show_menu(self) -> None:
         self.menu_sidebar_frame.pack(side=tk.LEFT, fill=tk.Y, before=self.video_container)
         self.menu_sidebar_visible = True
-
-        if self.menu_icon:
-            self.menu_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
+        self.menu_btn.config(bg=data.btn_active)
 
     def hide_menu(self) -> None:
         self.menu_sidebar_frame.pack_forget()
         self.menu_sidebar_visible = False
-
-        if self.menu_icon:
-            self.menu_btn.config(bg=data.bg_color, relief=tk.FLAT)
+        self.menu_btn.config(bg=data.bg_color)
 
     def toggle_status(self) -> None:
         args.show_status = not args.show_status
 
         if args.show_status:
-            self.status_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
+            self.toggle_status_btn.config(bg=data.btn_active)
+            if not self.is_fullscreen:
+                self.status_frame.pack(side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame)
         else:
-            self.status_btn.config(bg=data.btn_bg, relief=tk.FLAT)
+            self.toggle_status_btn.config(bg=data.btn_bg)
+            self.status_frame.pack_forget()
 
     def exit_app(self) -> None:
         self.root.destroy()
