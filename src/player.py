@@ -384,6 +384,7 @@ class Player:
             ac = getattr(player, "audio_codec", None) or "No Audio"
             vc = vc.upper() if isinstance(vc, str) else vc
             ac = ac.upper() if isinstance(ac, str) else ac
+            ac = ac.replace("(ADVANCED AUDIO CODING)", "").strip()
             codecs = f"{vc} / {ac}"
             stats = f"{res} | {fps_str} | {br_str} | {codecs}"
             self.stats_label.config(text=stats)
@@ -849,6 +850,14 @@ class Player:
 
         if channel["url"] == self.current_url:
             return
+
+        for db_ch in self.channels:
+            if db_ch["url"] == channel["url"]:
+                for key, value in db_ch.items():
+                    if key not in channel or not channel[key]:
+                        channel[key] = value
+
+                break
 
         self.stall_retries = 0
         self.tuning = True
