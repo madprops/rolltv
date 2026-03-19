@@ -110,6 +110,8 @@ if __name__ == '__main__':
         x=x,
         y=y,
         frameless=True,
+        easy_drag=False,
+        on_top=True,
         background_color='#1A1B26'
     )
 

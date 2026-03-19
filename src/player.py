@@ -940,6 +940,8 @@ class Player:
         cmd = [sys.executable, script_path, str(x), str(y), str(w), str(h), info.name]
         self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         self.check_globe_process()
+        self.root.after(200, self.update_globe_position)
+        self.root.after(600, self.update_globe_position)
 
     def hide_globe(self) -> None:
         if not self.globe_visible:
