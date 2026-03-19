@@ -5,6 +5,7 @@ import time
 import tkinter as tk
 import urllib.request
 
+from utils import utils
 from data import data
 from player import Player
 from info import info
@@ -41,7 +42,7 @@ def fetch_channels():
 
             return parse_m3u(lines)
 
-    print(f"Fetching latest playlist from {data.iptv_m3u_url}...")
+    utils.print(f"Fetching latest playlist from {data.iptv_m3u_url}...")
 
     try:
         req = urllib.request.Request(data.iptv_m3u_url, headers={"User-Agent": "Mozilla/5.0"})
@@ -56,7 +57,7 @@ def fetch_channels():
         return parse_m3u(lines)
 
     except Exception as e:
-        print(f"Failed to fetch playlist: {e}")
+        utils.print(f"Failed to fetch playlist: {e}")
         return []
 
 
@@ -64,7 +65,7 @@ def main():
     channels = fetch_channels()
 
     if len(channels) == 0:
-        print("No channels found. Check your connection.")
+        utils.print("No channels found. Check your connection.")
         sys.exit(1)
 
     root = tk.Tk()

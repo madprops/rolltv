@@ -9,6 +9,7 @@ import sys
 import mpv
 import json
 
+from utils import utils
 from data import data
 
 class Player:
@@ -35,7 +36,7 @@ class Player:
                 img = tk.PhotoImage(file=icon_path)
                 self.root.iconphoto(True, img)
             except Exception as e:
-                print(f"Could not load icon: {e}")
+                utils.print(f"Could not load icon: {e}")
 
         self.top_frame = tk.Frame(root, bg=data.bg_color)
         self.top_frame.pack(fill=tk.X, pady=10, padx=15)
@@ -202,12 +203,12 @@ class Player:
                 with open(data.history_file, "w", encoding="utf-8") as f:
                     json.dump([], f)
             except Exception as e:
-                print(f"Failed to create history file: {e}")
+                utils.print(f"Failed to create history file: {e}")
         try:
             with open(data.history_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"Failed to load history: {e}")
+            utils.print(f"Failed to load history: {e}")
         return []
 
     def save_history(self):
@@ -220,7 +221,7 @@ class Player:
             with open(data.history_file, "w", encoding="utf-8") as f:
                 json.dump(self.history, f, indent=4)
         except Exception as e:
-            print(f"Failed to save history: {e}")
+            utils.print(f"Failed to save history: {e}")
 
     def toggle_history(self):
         if self.sidebar_visible:
@@ -387,7 +388,7 @@ class Player:
                     check=True,
                 )
             except Exception as e:
-                print(f"Failed to copy to clipboard: {e}")
+                utils.print(f"Failed to copy to clipboard: {e}")
 
     def paste_link(self):
         try:
@@ -404,7 +405,7 @@ class Player:
                 channel = {"name": found_name, "url": clip_text}
                 self.play_specific(channel)
         except tk.TclError:
-            print("Clipboard is empty or inaccessible.")
+            utils.print("Clipboard is empty or inaccessible.")
 
     def volume_up(self, event):
         player = self.players[self.active_idx]
@@ -415,7 +416,7 @@ class Player:
 
     def volume_down(self, event):
         player = self.players[self.active_idx]
-        print(player)
+        utils.print(player)
 
         if player:
             current_vol = player.volume
