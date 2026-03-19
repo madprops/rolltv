@@ -304,9 +304,14 @@ class Player:
             if self.sidebar_visible:
                 self.sidebar_frame.pack_forget()
         else:
-            self.top_frame.pack(fill=tk.X, pady=10, padx=15, before=self.main_content_frame)
+            self.top_frame.pack(
+                fill=tk.X, pady=10, padx=15, before=self.main_content_frame
+            )
+
             if self.sidebar_visible:
-                self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, before=self.video_container)
+                self.sidebar_frame.pack(
+                    side=tk.RIGHT, fill=tk.Y, before=self.video_container
+                )
 
     def exit_fullscreen(self, event: Any = None) -> None:
         if self.is_fullscreen:
