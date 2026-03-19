@@ -18,6 +18,7 @@ CACHE_FILE = "/tmp/iptv_channels.m3u"
 CACHE_EXPIRY_SECONDS = 86400
 HISTORY_FILE = os.path.expanduser(f"~/.config/{info.name}/history.json")
 TITLE = info.full_name
+TUNING_TIMEOUT = 4000
 
 BG_COLOR = "#0f0f17"
 FG_COLOR = "#00ffcc"
@@ -383,7 +384,7 @@ class RandomIPTVPlayer:
         if self.active_idx == 0:
             next_idx = 1
 
-        self.tuning_timeout = self.root.after(10000, self.handle_timeout)
+        self.tuning_timeout = self.root.after(TUNING_TIMEOUT, self.handle_timeout)
         self.players[next_idx].play(channel['url'])
 
     def handle_timeout(self):
