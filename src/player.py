@@ -5,9 +5,9 @@ import random
 import os
 import threading
 import subprocess
-import mpv
+import mpv  # type: ignore
 import json
-from typing import Any
+from typing import Any, cast
 
 from utils import utils
 from data import data
@@ -19,8 +19,8 @@ class Player:
         self.channels = channels
         self.current_url = ""
         self.tuning = False
-        self.pending_channel = None
-        self.tuning_timeout = None
+        self.pending_channel: dict[str, Any] | None = None
+        self.tuning_timeout: str | None = None
         self.history = self.load_history()
         self.sidebar_visible = False
         self.stall_retries = 0
@@ -200,21 +200,21 @@ class Player:
         self.active_idx = 0
         self.frames[0].tkraise()
 
-        @self.players[0].on_key_press("MBTN_LEFT_DBL")
+        @self.players[0].on_key_press("MBTN_LEFT_DBL")  # type: ignore
         def on_dbl_click_0() -> None:
             self.root.after(0, self.play_random)
 
-        @self.players[1].on_key_press("MBTN_LEFT_DBL")
+        @self.players[1].on_key_press("MBTN_LEFT_DBL")  # type: ignore
         def on_dbl_click_1() -> None:
             self.root.after(0, self.play_random)
 
-        @self.players[0].property_observer("playback-time")
+        @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 if self.tuning and self.active_idx != 0:
                     self.root.after(0, self.commit_switch, 0)
 
-        @self.players[1].property_observer("playback-time")
+        @self.players[1].property_observer("playback-time")  # type: ignore
         def check_ready_1(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 if self.tuning and self.active_idx != 1:
@@ -271,7 +271,7 @@ class Player:
 
         try:
             with open(data.history_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return cast(list[dict[str, Any]], json.load(f))
         except Exception as e:
             utils.print(f"Failed to load history: {e}")
 
@@ -311,7 +311,7 @@ class Player:
             self.history_listbox.insert(tk.END, ch["name"])
 
     def on_history_click(self, event: Any) -> str:
-        index = self.history_listbox.nearest(event.y)
+        index = self.history_listbox.nearest(event.y)  # type: ignore
 
         if index >= 0:
             bbox = self.history_listbox.bbox(index)
@@ -482,6 +482,10 @@ class Player:
             old_idx = 1
 
         self.players[old_idx].stop()
+
+        if self.pending_channel is None:
+            return
+
         self.current_url = self.pending_channel["url"]
         self.name_label.config(text=self.pending_channel["name"])
         self.play_btn.config(state=tk.NORMAL, text=data.roll_text)

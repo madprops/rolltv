@@ -4,6 +4,7 @@ from pathlib import Path
 
 class Info:
     name: str
+    full_name: str
     version: str
 
     def __init__(self) -> None:
