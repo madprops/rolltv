@@ -40,6 +40,38 @@ class Player:
 
         self.top_frame = tk.Frame(root, bg=data.bg_color)
         self.top_frame.pack(fill=tk.X, pady=10, padx=15)
+
+        self.name_label = tk.Label(
+            self.top_frame,
+            text="Click the dice to tune in",
+            font=data.font_ui,
+            bg=data.bg_color,
+            fg=data.fg_color,
+        )
+
+        self.name_label.pack(side=tk.LEFT)
+        self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
+        self.btn_frame.pack(side=tk.RIGHT)
+        self.country_var = tk.StringVar(value=self.placeholder_text)
+
+        self.country_entry = tk.Entry(
+            self.btn_frame,
+            textvariable=self.country_var,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg="gray",
+            insertbackground=data.fg_color,
+            width=22,
+            relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightcolor=data.btn_border,
+            highlightthickness=1,
+            bd=0,
+        )
+
+        self.country_entry.pack(side=tk.LEFT, padx=(0, 10))
+        self.country_entry.bind("<FocusIn>", self.on_country_focus_in)
+        self.country_entry.bind("<FocusOut>", self.on_country_focus_out)
         self.setup_languages()
         self.selected_lang = tk.StringVar(value=data.any_language)
         style = ttk.Style()
@@ -73,7 +105,7 @@ class Player:
         self.root.option_add("*TCombobox*Listbox.selectForeground", data.fg_color)
 
         self.lang_cb = ttk.Combobox(
-            self.top_frame,
+            self.btn_frame,
             textvariable=self.selected_lang,
             values=[data.any_language] + self.display_languages,
             state="readonly",
@@ -83,38 +115,6 @@ class Player:
 
         self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
         self.lang_cb.bind("<<ComboboxSelected>>", lambda e: self.root.focus_set())
-        self.country_var = tk.StringVar(value=self.placeholder_text)
-
-        self.country_entry = tk.Entry(
-            self.top_frame,
-            textvariable=self.country_var,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg="gray",
-            insertbackground=data.fg_color,
-            width=22,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightcolor=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-        )
-
-        self.country_entry.pack(side=tk.LEFT, padx=(0, 10))
-        self.country_entry.bind("<FocusIn>", self.on_country_focus_in)
-        self.country_entry.bind("<FocusOut>", self.on_country_focus_out)
-
-        self.name_label = tk.Label(
-            self.top_frame,
-            text="Click the dice to tune in",
-            font=data.font_ui,
-            bg=data.bg_color,
-            fg=data.fg_color,
-        )
-
-        self.name_label.pack(side=tk.LEFT)
-        self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.btn_frame.pack(side=tk.RIGHT)
 
         self.copy_btn = tk.Button(
             self.btn_frame,
