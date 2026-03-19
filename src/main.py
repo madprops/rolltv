@@ -89,7 +89,8 @@ def main() -> None:
         utils.print("No channels found. Check your connection.")
         sys.exit(1)
 
-    root = tk.Tk()
+    utils.set_proc_name(info.name)
+    root = tk.Tk(className=info.name)
     Player(root, channels)
     root.mainloop()
 
