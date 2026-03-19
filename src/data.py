@@ -12,6 +12,7 @@ class Data:
         self.cache_streams = "/tmp/iptv_streams.json"
         self.cache_feeds = "/tmp/iptv_feeds.json"
         self.cache_countries = "/tmp/iptv_countries.json"
+        self.cache_merged = "/tmp/iptv_merged.json"
         self.cache_expiry_seconds = 86400
         self.history_file = os.path.expanduser(f"~/.config/{info.name}/history.json")
         self.data_file = os.path.expanduser(f"~/.config/{info.name}/data.json")

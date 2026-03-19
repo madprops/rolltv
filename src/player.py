@@ -980,37 +980,23 @@ class Player:
 
     def find_live_stream(self, my_search_id: int) -> None:
         working_channel = None
-        attempts = 0
         sel_lang = self.selected_lang.get()
         valid_channels = self.channels
 
         if sel_lang != data.any_language:
             target_code = self.lang_map_rev.get(sel_lang, sel_lang)
-            filtered_by_lang = []
-
-            for ch in self.channels:
-                langs = ch.get("languages") or []
-
-                if target_code in langs:
-                    filtered_by_lang.append(ch)
-
-            valid_channels = filtered_by_lang
+            valid_channels = [ch for ch in valid_channels if target_code in (ch.get("languages") or [])]
 
         target_country = self.country_var.get().strip().lower()
 
         if (target_country != "") and (
             target_country != self.country_placeholder.lower()
         ):
-            filtered_by_country = []
-
-            for ch in valid_channels:
-                c_code = (ch.get("country_code") or "").lower()
-                c_name = (ch.get("country_name") or "").lower()
-
-                if (target_country == c_code) or (target_country in c_name):
-                    filtered_by_country.append(ch)
-
-            valid_channels = filtered_by_country
+            valid_channels = [
+                ch for ch in valid_channels
+                if target_country == (ch.get("country_code") or "").lower()
+                or target_country in (ch.get("country_name") or "").lower()
+            ]
 
         if len(valid_channels) == 0:
             self.root.after(0, self.reset_button)
@@ -1021,14 +1007,11 @@ class Player:
 
             return
 
-        while working_channel is None:
+        candidates = random.sample(valid_channels, min(30, len(valid_channels)))
+
+        for candidate in candidates:
             if not self.tuning or my_search_id != self.search_id:
                 return
-
-            if attempts > 30:
-                break
-
-            candidate = random.choice(valid_channels)
 
             if (
                 self.is_roll
@@ -1037,8 +1020,6 @@ class Player:
                 and (len(valid_channels) > 1)
             ):
                 continue
-
-            attempts += 1
 
             try:
                 req = urllib.request.Request(
@@ -1065,6 +1046,7 @@ class Player:
                                     continue
 
                             working_channel = candidate
+                            break
             except Exception:
                 continue
 

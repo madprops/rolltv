@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+import concurrent.futures
 import tkinter as tk
 import urllib.request
 from typing import Any
@@ -40,24 +41,29 @@ def fetch_json(url: str, cache_file: str) -> Any:
 
 
 def get_channels_data() -> list[dict[str, Any]]:
-    channels_raw = fetch_json(data.channels_url, data.cache_channels)
-    streams_raw = fetch_json(data.streams_url, data.cache_streams)
-    feeds_raw = fetch_json(data.feeds_url, data.cache_feeds)
-    countries_raw = fetch_json(data.countries_url, data.cache_countries)
-    channel_dict = {}
+    if os.path.exists(data.cache_merged):
+        file_age = time.time() - os.path.getmtime(data.cache_merged)
 
-    for ch in channels_raw:
-        channel_dict[ch["id"]] = ch
-    feed_dict = {}
+        if file_age < data.cache_expiry_seconds:
+            try:
+                with open(data.cache_merged, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
 
-    for f in feeds_raw:
-        feed_dict[f["id"]] = f
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        f_channels = executor.submit(fetch_json, data.channels_url, data.cache_channels)
+        f_streams = executor.submit(fetch_json, data.streams_url, data.cache_streams)
+        f_feeds = executor.submit(fetch_json, data.feeds_url, data.cache_feeds)
+        f_countries = executor.submit(fetch_json, data.countries_url, data.cache_countries)
+        channels_raw = f_channels.result()
+        streams_raw = f_streams.result()
+        feeds_raw = f_feeds.result()
+        countries_raw = f_countries.result()
 
-    country_dict = {}
-
-    for c in countries_raw:
-        country_dict[c.get("code", "").lower()] = c.get("name", "").lower()
-
+    channel_dict = {ch["id"]: ch for ch in channels_raw if "id" in ch}
+    feed_dict = {f["id"]: f for f in feeds_raw if "id" in f}
+    country_dict = {c.get("code", "").lower(): c.get("name", "").lower() for c in countries_raw if "code" in c}
     merged = []
 
     for st in streams_raw:
@@ -67,28 +73,33 @@ def get_channels_data() -> list[dict[str, Any]]:
         ch_id = st.get("channel")
         feed_id = st.get("feed")
 
-        if ch_id:
-            if ch_id in channel_dict:
-                ch_info = channel_dict[ch_id]
-                langs = ch_info.get("languages") or []
+        if ch_id and ch_id in channel_dict:
+            ch_info = channel_dict[ch_id]
+            langs = ch_info.get("languages") or []
 
-                if feed_id:
-                    if feed_id in feed_dict:
-                        feed_langs = feed_dict[feed_id].get("languages") or []
-                        langs = list(set(langs + feed_langs))
+            if feed_id and feed_id in feed_dict:
+                feed_langs = feed_dict[feed_id].get("languages") or []
+                langs = list(set(langs + feed_langs))
 
-                c_code = ch_info.get("country") or ""
-                c_name = country_dict.get(c_code.lower()) or ""
+            c_code = ch_info.get("country") or ""
+            c_name = country_dict.get(c_code.lower()) or ""
 
-                merged.append(
-                    {
-                        "name": ch_info.get("name", "Unknown"),
-                        "url": st.get("url", ""),
-                        "languages": langs,
-                        "country_code": c_code,
-                        "country_name": c_name,
-                    }
-                )
+            merged.append(
+                {
+                    "name": ch_info.get("name", "Unknown"),
+                    "url": st.get("url", ""),
+                    "languages": langs,
+                    "country_code": c_code,
+                    "country_name": c_name,
+                }
+            )
+
+    if len(merged) > 0:
+        try:
+            with open(data.cache_merged, "w", encoding="utf-8") as f:
+                json.dump(merged, f)
+        except Exception as e:
+            utils.print(f"Failed to write merged cache: {e}")
 
     return merged
 
