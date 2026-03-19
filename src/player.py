@@ -386,6 +386,7 @@ class Player:
             if len(self.filtered_history) > 0:
                 self.root.focus_set()
                 self.root.after(0, self.play_specific, self.filtered_history[0])
+                self.hide_history()
 
         return "break"
 
@@ -489,20 +490,26 @@ class Player:
         except Exception as e:
             utils.print(f"Failed to save history: {e}")
 
+    def show_history(self) -> None:
+        self.update_sidebar()
+
+        self.sidebar_frame.pack(
+            side=tk.RIGHT, fill=tk.Y, before=self.video_container
+        )
+
+        self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
+        self.sidebar_visible = True
+
+    def hide_history(self) -> None:
+        self.sidebar_frame.pack_forget()
+        self.history_btn.config(bg=data.btn_bg, relief=tk.FLAT)
+        self.sidebar_visible = False
+
     def toggle_history(self) -> None:
         if self.sidebar_visible:
-            self.sidebar_frame.pack_forget()
-            self.history_btn.config(bg=data.btn_bg, relief=tk.FLAT)
-            self.sidebar_visible = False
+            self.hide_history()
         else:
-            self.update_sidebar()
-
-            self.sidebar_frame.pack(
-                side=tk.RIGHT, fill=tk.Y, before=self.video_container
-            )
-
-            self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
-            self.sidebar_visible = True
+            self.show_history()
 
     def update_sidebar(self, *args: Any) -> None:
         self.history_listbox.delete(0, tk.END)
