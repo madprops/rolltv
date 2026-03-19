@@ -338,9 +338,11 @@ class Player:
 
     def show_info_message(self, text: str) -> None:
         self.name_label.config(text=text)
+
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
-        self.msg_timeout_id = self.root.after(3000, self.restore_channel_name)
+
+        self.msg_timeout_id = self.root.after(data.info_restore_delay, self.restore_channel_name)
 
     def show_status_message(self, text: str) -> None:
         self.stats_label.config(text=text)
@@ -348,6 +350,7 @@ class Player:
     def restore_channel_name(self) -> None:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
+
         self.msg_timeout_id = None
         self.name_label.config(text=self.current_channel_name)
 

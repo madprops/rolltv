@@ -16,7 +16,7 @@ class Data:
         self.history_file = os.path.expanduser(f"~/.config/{info.name}/history.json")
         self.data_file = os.path.expanduser(f"~/.config/{info.name}/data.json")
         self.title = info.full_name
-        self.tuning_timeout = 4000
+        self.tuning_timeout = 4 * 1000
         self.bg_color = "#0f0f17"
         self.fg_color = "#00ffcc"
         self.btn_bg = "#1f1f2e"
@@ -32,6 +32,7 @@ class Data:
         self.width = 1200
         self.height = 800
         self.url_timeout = 3.0
+        self.info_restore_delay = 10 * 1000
 
 
 data = Data()
