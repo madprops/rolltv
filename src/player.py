@@ -32,6 +32,13 @@ class Player:
     sidebar_listbox: ttk.Treeview
     scrollbar: tk.Scrollbar
     sidebar_version_label: tk.Label
+    name_label: tk.Label
+    top_frame: tk.Frame
+    country_entry: tk.Entry
+    lang_cb: ttk.Combobox
+    history_btn: tk.Button
+    country_btn: tk.Button
+    play_btn: tk.Button
 
     def __init__(self, root: tk.Tk, channels: list[dict[str, Any]]) -> None:
         self.root = root
