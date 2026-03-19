@@ -309,7 +309,6 @@ class Player:
 
     def prepare_switch(self, channel):
         self.pending_channel = channel
-
         next_idx = 0
 
         if self.active_idx == 0:
@@ -355,7 +354,6 @@ class Player:
 
         self.active_idx = ready_idx
         self.frames[ready_idx].tkraise()
-
         old_idx = 0
 
         if ready_idx == 0:
@@ -368,7 +366,7 @@ class Player:
         self.history = [ch for ch in self.history if ch["url"] != self.pending_channel["url"]]
         self.history.append(self.pending_channel)
 
-        if len(self.history) > MAX_HISTORY:
+        if len(self.history) > data.max_history:
             self.history.pop(0)
 
         self.save_history()
