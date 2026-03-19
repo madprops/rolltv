@@ -287,46 +287,10 @@ class Player:
         )
 
         self.menu_sidebar_frame.pack_propagate(False)
+        self.main_menu_item("Toggle FX", self.toggle_sound_fx)
+        self.main_menu_item("Toggle Status", self.toggle_status)
+        self.main_menu_item("Exit", self.exit_app)
 
-        self.toggle_status_btn = tk.Button(
-            self.menu_sidebar_frame,
-            text="Toggle Status",
-            command=self.toggle_status,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=0,
-            bd=0,
-            padx=12,
-            pady=4,
-            anchor="w",
-        )
-
-        self.toggle_status_btn.pack(fill=tk.X, padx=10, pady=(10, 5))
-
-        self.exit_btn = tk.Button(
-            self.menu_sidebar_frame,
-            text="Exit",
-            command=self.exit_app,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=0,
-            bd=0,
-            padx=12,
-            pady=4,
-            anchor="w",
-        )
-
-        self.exit_btn.pack(fill=tk.X, padx=10, pady=5)
 
         self.sidebar_version_label = tk.Label(
             self.menu_sidebar_frame,
@@ -1040,14 +1004,18 @@ class Player:
         args.show_status = not args.show_status
 
         if args.show_status:
-            self.toggle_status_btn.config(bg=data.btn_active)
             if not self.is_fullscreen:
                 self.status_frame.pack(
                     side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
                 )
         else:
-            self.toggle_status_btn.config(bg=data.btn_bg)
             self.status_frame.pack_forget()
+
+        self.show_name_message("Status Bar Enabled" if args.show_status else "Status Bar Disabled")
+
+    def toggle_sound_fx(self) -> None:
+        args.sound_fx = not args.sound_fx
+        self.show_name_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
 
     def exit_app(self) -> None:
         self.root.destroy()
@@ -1178,7 +1146,9 @@ class Player:
         if len(self.channels) == 0:
             return
 
-        sound.play_tuning_sound()
+        if args.sound_fx:
+            sound.play_tuning_sound()
+
         self.animate_roll_button()
 
         if self.tuning:
@@ -1208,7 +1178,7 @@ class Player:
         self.roll_anim_job = self.root.after(500, restore_style)
 
     def play_specific(self, channel: dict[str, Any], manual: bool = False) -> None:
-        if manual:
+        if manual and args.sound_fx:
             sound.play_tuning_sound()
 
         if self.tuning:
@@ -1664,3 +1634,24 @@ class Player:
         self.root.attributes("-topmost", False)
         self.root.lift()
         self.root.focus_force()
+
+    def main_menu_item(self, text, command):
+        btn = tk.Button(
+            self.menu_sidebar_frame,
+            text=text,
+            command=command,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg=data.fg_color,
+            activebackground=data.btn_active,
+            activeforeground=data.accent_color,
+            relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightthickness=0,
+            bd=0,
+            padx=12,
+            pady=4,
+            anchor="w",
+        )
+
+        btn.pack(fill=tk.X, padx=10, pady=5)

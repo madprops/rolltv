@@ -14,8 +14,13 @@ class Args:
             "--no-status", action="store_false", dest="show_status", default=True
         )
 
+        parser.add_argument(
+            "--no-sound-fx", action="store_false", dest="sound_fx", default=True
+        )
+
         parsed_args = parser.parse_args()
         self.show_status = parsed_args.show_status
+        self.sound_fx = parsed_args.sound_fx
 
 
 args = Args()
