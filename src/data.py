@@ -22,8 +22,9 @@ class Data:
         self.btn_border = "#28283d"
         self.font_ui = ("Monospace", 12, "bold")
         self.roll_text = "🎲 Roll TV"
-        self.max_history = 100
         self.any_language = "Any Language"
+        self.max_history = 100
+        self.max_retries = 10
 
 
 data = Data()

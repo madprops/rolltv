@@ -24,7 +24,7 @@ class Player:
         self.history = self.load_history()
         self.sidebar_visible = False
         self.stall_retries = 0
-        self.placeholder_text = "e.g. cr or costa rica"
+        self.placeholder_text = "Country name or code"
         self.root.title(data.title)
         self.root.geometry("1000x600")
         self.root.configure(bg=data.bg_color)
@@ -345,9 +345,9 @@ class Player:
             filtered_by_lang = []
 
             for ch in self.channels:
-                langs = ch.get("languages", [])
+                langs = ch.get("languages") or []
 
-                if (target_code in langs) and (len(langs) <= 2):
+                if target_code in langs:
                     filtered_by_lang.append(ch)
 
             valid_channels = filtered_by_lang
@@ -358,8 +358,8 @@ class Player:
             filtered_by_country = []
 
             for ch in valid_channels:
-                c_code = ch.get("country_code", "").lower()
-                c_name = ch.get("country_name", "").lower()
+                c_code = (ch.get("country_code") or "").lower()
+                c_name = (ch.get("country_name") or "").lower()
 
                 if (target_country == c_code) or (target_country in c_name):
                     filtered_by_country.append(ch)
@@ -372,7 +372,7 @@ class Player:
             return
 
         while working_channel is None:
-            if attempts > 10:
+            if attempts > 30:
                 break
 
             candidate = random.choice(valid_channels)
@@ -382,12 +382,14 @@ class Player:
                 req = urllib.request.Request(
                     candidate["url"],
                     method="GET",
-                    headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-100"},
+                    headers={"User-Agent": "mpv/0.34.0"},
                 )
 
-                with urllib.request.urlopen(req, timeout=3) as response:
-                    if (response.status == 200) or (response.status == 206):
-                        working_channel = candidate
+                with urllib.request.urlopen(req, timeout=3.0) as response:
+                    if response.status in [200, 206, 301, 302]:
+                        chunk = response.read(16)
+                        if len(chunk) > 0:
+                            working_channel = candidate
             except Exception:
                 continue
 
@@ -395,6 +397,7 @@ class Player:
             self.root.after(0, self.prepare_switch, working_channel)
         else:
             self.root.after(0, self.reset_button)
+            self.root.after(0, lambda: self.name_label.config(text="Could not find a working stream."))
 
     def prepare_switch(self, channel):
         self.pending_channel = channel
@@ -408,9 +411,9 @@ class Player:
 
     def handle_timeout(self):
         if self.tuning:
-            if self.stall_retries < 5:
+            if self.stall_retries < data.max_retries:
                 self.stall_retries += 1
-                self.name_label.config(text=f"Stalled. Retrying... ({self.stall_retries}/5)")
+                self.name_label.config(text=f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})")
                 next_idx = 0
 
                 if self.active_idx == 0:
@@ -428,7 +431,7 @@ class Player:
                     next_idx = 1
 
                 self.players[next_idx].stop()
-                self.name_label.config(text="Stream stalled 5 times. Roll again.")
+                self.name_label.config(text=f"Stream stalled {data.max_retries} times. Roll again.")
 
     def commit_switch(self, ready_idx):
         if not self.tuning:
