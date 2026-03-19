@@ -945,12 +945,10 @@ class Player:
             side=tk.LEFT, fill=tk.Y, before=self.video_container
         )
         self.menu_sidebar_visible = True
-        self.menu_btn.config(bg=data.btn_active)
 
     def hide_menu(self) -> None:
         self.menu_sidebar_frame.pack_forget()
         self.menu_sidebar_visible = False
-        self.menu_btn.config(bg=data.bg_color)
 
     def toggle_status(self) -> None:
         args.show_status = not args.show_status
