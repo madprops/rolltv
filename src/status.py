@@ -81,7 +81,6 @@ class Status:
                 getattr(
                     player_mpv, "video_format", getattr(player_mpv, "video_codec", None)
                 )
-
                 or "No Video"
             )
 
@@ -91,7 +90,6 @@ class Status:
                     "audio_codec_name",
                     getattr(player_mpv, "audio_codec", None),
                 )
-
                 or "No Audio"
             )
 

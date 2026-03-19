@@ -180,6 +180,10 @@ class Player:
         def on_dbl_click() -> None:
             self.root.after(0, self.toggle_maximize)
 
+        @player.on_key_press("MBTN_LEFT")  # type: ignore
+        def on_left_click() -> None:
+            self.root.after(0, self.root.focus_set)
+
         @player.on_key_press("WHEEL_UP")  # type: ignore
         @player.on_key_press("AXIS_UP")  # type: ignore
         def on_wheel_up() -> None:
