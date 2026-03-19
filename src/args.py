@@ -2,6 +2,7 @@ import argparse
 
 from info import info
 
+
 class Args:
     def __init__(self) -> None:
         parser = argparse.ArgumentParser(
