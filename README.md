@@ -14,4 +14,6 @@ Then run this `pipx` command:
 
 `pipx install git+https://github.com/madprops/rolltv --force`
 
+This assumes you have `mpv` installed.
+
 ![](screenshot.png)
