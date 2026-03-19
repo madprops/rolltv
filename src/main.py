@@ -2,16 +2,16 @@
 
 import os
 import sys
+import json
 import time
 import tkinter as tk
 import urllib.request
-import json
 from typing import Any
 
-from utils import utils
-from data import data
-from player import Player
 from info import info
+from data import data
+from utils import utils
+from player import Player
 
 
 def fetch_json(url: str, cache_file: str) -> Any:
@@ -50,10 +50,12 @@ def get_channels_data() -> list[dict[str, Any]]:
 
     for f in feeds_raw:
         feed_dict[f["id"]] = f
+
     country_dict = {}
 
     for c in countries_raw:
         country_dict[c.get("code", "").lower()] = c.get("name", "").lower()
+
     merged = []
 
     for st in streams_raw:
@@ -85,11 +87,13 @@ def get_channels_data() -> list[dict[str, Any]]:
                         "country_name": c_name,
                     }
                 )
+
     return merged
 
 
 def main() -> None:
     channels = get_channels_data()
+
     if len(channels) == 0:
         utils.print("No channels found. Check your connection.")
         sys.exit(1)
