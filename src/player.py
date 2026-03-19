@@ -941,7 +941,9 @@ class Player:
             self.show_menu()
 
     def show_menu(self) -> None:
-        self.menu_sidebar_frame.pack(side=tk.LEFT, fill=tk.Y, before=self.video_container)
+        self.menu_sidebar_frame.pack(
+            side=tk.LEFT, fill=tk.Y, before=self.video_container
+        )
         self.menu_sidebar_visible = True
         self.menu_btn.config(bg=data.btn_active)
 
@@ -956,7 +958,9 @@ class Player:
         if args.show_status:
             self.toggle_status_btn.config(bg=data.btn_active)
             if not self.is_fullscreen:
-                self.status_frame.pack(side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame)
+                self.status_frame.pack(
+                    side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
+                )
         else:
             self.toggle_status_btn.config(bg=data.btn_bg)
             self.status_frame.pack_forget()
@@ -1370,9 +1374,6 @@ class Player:
                 player.pause = not player.pause
                 status = "Paused" if player.pause else "Playing"
                 player.show_text(status)
-
-    def exit_app(self) -> None:
-        self.root.destroy()
 
     def start_ipc_listener(self) -> None:
         def listener() -> None:
