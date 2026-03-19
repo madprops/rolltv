@@ -71,9 +71,11 @@ class Player:
             font=data.name_font,
             bg=data.bg_color,
             fg=data.fg_color,
+            cursor="hand2",
         )
 
         self.name_label.pack(anchor=tk.W)
+        self.name_label.bind("<Button-1>", self.cancel_tuning)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT, padx=(0, 20))
 
@@ -966,7 +968,10 @@ class Player:
         self.search_id += 1
         self.prepare_switch(channel, self.search_id)
 
-    def cancel_tuning(self) -> None:
+    def cancel_tuning(self, event: Any = None) -> None:
+        if not self.tuning:
+            return
+
         self.tuning = False
 
         if self.tuning_timeout is not None:
@@ -976,7 +981,7 @@ class Player:
         next_idx = 1 if self.active_idx == 0 else 0
         self.player_search_ids[next_idx] = -1
         self.players[next_idx].stop()
-        self.show_name_message("Tuning cancelled.")
+        self.restore_channel_name()
 
     def find_live_stream(self, my_search_id: int) -> None:
         working_channel = None
