@@ -2,9 +2,6 @@ import os
 import json
 import mpv  # type: ignore
 import random
-import socket
-import hashlib
-import tempfile
 import threading
 import subprocess
 import tkinter as tk
@@ -18,6 +15,9 @@ from info import info
 from args import args
 from sound import sound
 from sidebar import Sidebar
+from topbar import Topbar
+from store import store
+from ipc import IPCListener
 
 
 class Player:
@@ -48,7 +48,7 @@ class Player:
         self.current_country = "Unknown"
         self.tuning_timeout: str | None = None
         self.msg_timeout_id: str | None = None
-        self.history = self.load_history()
+        self.history = store.load_history()
         self.sidebar_items: list[dict[str, Any]] = []
         self.sidebar_active_index = 0
         self.history_scroll_delay = 200
@@ -66,45 +66,14 @@ class Player:
         self.root.title(data.title)
         self.root.geometry(f"{data.width}x{data.height}")
         self.root.configure(bg=data.bg_color)
-        self.top_frame = tk.Frame(root, bg=data.bg_color)
-        self.top_frame.pack(fill=tk.X, pady=10)
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        icon_path = os.path.join(script_dir, "icon.png")
-
-        if os.path.exists(icon_path):
-            try:
-                img = tk.PhotoImage(file=icon_path)
-                self.root.iconphoto(True, img)
-            except Exception as e:
-                utils.print(f"Could not load icon: {e}")
-
-        self.menu_btn = tk.Label(
-            self.top_frame,
-            text=info.full_name,
-            font=data.name_font,
-            fg=data.accent_color,
-            bg=data.bg_color,
-            cursor="hand2",
-        )
-
-        self.menu_btn.pack(side=tk.LEFT, padx=(20, 5))
-        self.menu_btn.bind("<Button-1>", self.toggle_menu)
-        self.info_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.info_frame.pack(side=tk.LEFT, padx=(10, 0))
-
-        self.name_label = tk.Label(
-            self.info_frame,
-            text=self.current_channel_name,
-            font=data.name_font,
-            bg=data.bg_color,
-            fg=data.fg_color,
-            cursor="hand2",
-        )
-
-        self.name_label.pack(anchor=tk.W)
-        self.name_label.bind("<Button-1>", self.cancel_tuning)
-        self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.btn_frame.pack(side=tk.RIGHT, padx=(0, 20))
+        self.saved_data = store.load_data()
+        country_val = self.saved_data.get("country", self.country_placeholder)
+        self.country_var = tk.StringVar(value=country_val)
+        self.country_var.trace_add("write", self.on_country_var_change)
+        self.setup_languages()
+        lang_val = self.saved_data.get("language", data.any_language)
+        self.selected_lang = tk.StringVar(value=lang_val)
+        Topbar(self)
         self.status_frame = tk.Frame(root, bg=data.btn_bg)
         self.status_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
@@ -117,180 +86,6 @@ class Player:
         )
 
         self.status_label.pack(anchor=tk.W, padx=20, pady=4)
-
-        self.saved_data = self.load_data()
-        country_val = self.saved_data.get("country", self.country_placeholder)
-        self.country_var = tk.StringVar(value=country_val)
-        self.country_var.trace_add("write", self.on_country_var_change)
-
-        self.country_frame = tk.Frame(
-            self.btn_frame,
-            bg=data.btn_bg,
-            highlightbackground=data.btn_border,
-            highlightcolor=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-        )
-
-        self.country_frame.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.country_entry = tk.Entry(
-            self.country_frame,
-            textvariable=self.country_var,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg="gray" if country_val == self.country_placeholder else data.fg_color,
-            insertbackground=data.accent_color,
-            width=18,
-            relief=tk.FLAT,
-            highlightthickness=0,
-            bd=0,
-        )
-
-        self.country_entry.pack(side=tk.LEFT, padx=8, pady=4)
-        self.country_entry.bind("<FocusIn>", self.on_country_focus_in)
-        self.country_entry.bind("<FocusOut>", self.on_country_focus_out)
-        self.country_entry.bind("<Return>", self.on_country_return)
-        self.setup_languages()
-        lang_val = self.saved_data.get("language", data.any_language)
-        self.selected_lang = tk.StringVar(value=lang_val)
-        style = ttk.Style()
-
-        if "clam" in style.theme_names():
-            style.theme_use("clam")
-
-        style.configure(
-            "TCombobox",
-            fieldbackground=data.btn_bg,
-            background=data.btn_bg,
-            foreground=data.fg_color,
-            arrowcolor=data.fg_color,
-            bordercolor=data.btn_border,
-            lightcolor=data.btn_bg,
-            darkcolor=data.btn_bg,
-            padding=5,
-        )
-
-        style.map(
-            "TCombobox",
-            fieldbackground=[("readonly", data.btn_bg)],
-            selectbackground=[("readonly", data.btn_bg)],
-            selectforeground=[("readonly", data.accent_color)],
-            background=[("readonly", data.btn_bg), ("active", data.btn_active)],
-            bordercolor=[("readonly", data.btn_border)],
-        )
-
-        self.root.option_add("*TCombobox*Listbox.background", data.btn_bg)
-        self.root.option_add("*TCombobox*Listbox.foreground", data.fg_color)
-        self.root.option_add("*TCombobox*Listbox.selectBackground", data.btn_active)
-        self.root.option_add("*TCombobox*Listbox.selectForeground", data.accent_color)
-
-        self.lang_cb = ttk.Combobox(
-            self.btn_frame,
-            textvariable=self.selected_lang,
-            values=[data.any_language] + self.display_languages,
-            state="readonly",
-            font=data.font_ui,
-            width=16,
-        )
-
-        self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
-        self.lang_cb.bind("<<ComboboxSelected>>", self.on_language_selected)
-
-        self.copy_btn = tk.Button(
-            self.btn_frame,
-            text="Copy",
-            command=self.copy_link,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.copy_btn.pack(side=tk.LEFT, padx=5)
-
-        self.paste_btn = tk.Button(
-            self.btn_frame,
-            text="Paste",
-            command=self.paste_link,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.paste_btn.pack(side=tk.LEFT, padx=5)
-
-        self.country_btn = tk.Button(
-            self.btn_frame,
-            text="Country",
-            command=self.toggle_country,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.country_btn.pack(side=tk.LEFT, padx=5)
-
-        self.history_btn = tk.Button(
-            self.btn_frame,
-            text="History",
-            command=self.toggle_history,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.history_btn.pack(side=tk.LEFT, padx=5)
-
-        self.play_btn = tk.Button(
-            self.btn_frame,
-            text=data.roll_text,
-            command=self.play_random,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=1,
-            bd=0,
-            padx=12,
-            pady=4,
-        )
-
-        self.play_btn.pack(side=tk.LEFT, padx=5)
         self.main_content_frame = tk.Frame(root, bg=data.bg_color)
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -360,7 +155,8 @@ class Player:
             self.register_player_bindings(player)
 
         self.update_status_loop()
-        self.start_ipc_listener()
+        self.ipc_listener = IPCListener(self.root)
+        self.ipc_listener.start()
 
     def show_name_message(self, text: str) -> None:
         self.name_label.config(text=text, image="", compound=tk.NONE)
@@ -1392,7 +1188,7 @@ class Player:
         if len(self.history) > data.max_history:
             self.history.pop(0)
 
-        self.save_history()
+        store.save_history(self.history)
 
         if self.active_sidebar:
             self.update_sidebar()
@@ -1530,63 +1326,3 @@ class Player:
                 player.pause = not player.pause
                 status = "Paused" if player.pause else "Playing"
                 player.show_text(status)
-
-    def start_ipc_listener(self) -> None:
-        def listener() -> None:
-            if os.name == "posix":
-                # Unix Domain Socket for Linux/Mac (X11 & Wayland)
-                socket_path = os.path.join(
-                    tempfile.gettempdir(), f"{info.name}_ipc.sock"
-                )
-
-                if os.path.exists(socket_path):
-                    try:
-                        os.remove(socket_path)
-                    except OSError:
-                        pass
-
-                server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                server.bind(socket_path)
-            else:
-                # Localhost TCP Socket for Windows
-                port = (
-                    50000 + int(hashlib.md5(info.name.encode()).hexdigest(), 16) % 10000
-                )
-
-                server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-                try:
-                    server.bind(("127.0.0.1", port))
-                except OSError:
-                    return
-
-            server.listen(1)
-
-            while True:
-                try:
-                    conn, _ = server.accept()
-                    data = conn.recv(1024).decode("utf-8")
-
-                    if data == "RAISE":
-                        # Safely trigger the Tkinter event from the background thread
-                        self.root.after(0, self.raise_window)
-
-                    conn.close()
-                except Exception:
-                    break
-
-        thread = threading.Thread(target=listener, daemon=True)
-        thread.start()
-
-    def raise_window(self) -> None:
-        if self.root.state() == "iconic":
-            self.root.deiconify()
-
-        if os.name == "posix":
-            self.root.withdraw()
-            self.root.deiconify()
-
-        self.root.attributes("-topmost", True)
-        self.root.attributes("-topmost", False)
-        self.root.lift()
-        self.root.focus_force()
