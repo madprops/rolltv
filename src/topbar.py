@@ -189,7 +189,9 @@ class Topbar:
             padx=12,
             pady=4,
         )
-        self.player.world_btn.pack(side=tk.LEFT, padx=5, before=self.player.country_frame)
+        self.player.world_btn.pack(
+            side=tk.LEFT, padx=5, before=self.player.country_frame
+        )
 
         self.player.country_btn = tk.Button(
             self.player.btn_frame,

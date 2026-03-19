@@ -55,7 +55,9 @@ class IPCListener:
                     elif req_data.startswith("COUNTRY:"):
                         if self.player:
                             country_name = req_data.split(":", 1)[1]
-                            self.root.after(0, self.player.set_country_from_globe, country_name)
+                            self.root.after(
+                                0, self.player.set_country_from_globe, country_name
+                            )
 
                     conn.close()
                 except Exception:

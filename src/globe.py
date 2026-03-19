@@ -15,11 +15,16 @@ class Api:
     def select_country(self, name):
         try:
             if os.name == "posix":
-                socket_path = os.path.join(tempfile.gettempdir(), f"{self.app_name}_ipc.sock")
+                socket_path = os.path.join(
+                    tempfile.gettempdir(), f"{self.app_name}_ipc.sock"
+                )
                 client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 client.connect(socket_path)
             else:
-                port = 50000 + int(hashlib.md5(self.app_name.encode()).hexdigest(), 16) % 10000
+                port = (
+                    50000
+                    + int(hashlib.md5(self.app_name.encode()).hexdigest(), 16) % 10000
+                )
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client.connect(("127.0.0.1", port))
 
@@ -87,7 +92,7 @@ html = """
 </html>
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app_name = "rolltv"
 
     if len(sys.argv) >= 2:
@@ -99,22 +104,22 @@ if __name__ == '__main__':
     icon_path = os.path.join(script_dir, "icon.png")
 
     kwargs = {
-        'title': 'World',
-        'html': html,
-        'js_api': api,
-        'width': 800,
-        'height': 600,
-        'background_color': '#1A1B26'
+        "title": "World",
+        "html": html,
+        "js_api": api,
+        "width": 800,
+        "height": 600,
+        "background_color": "#1A1B26",
     }
 
     sig = inspect.signature(webview.create_window)
-    if 'icon' in sig.parameters:
-        kwargs['icon'] = icon_path
+    if "icon" in sig.parameters:
+        kwargs["icon"] = icon_path
 
     window = webview.create_window(**kwargs)
 
     # Suppress pywebview's internal backend fallback warnings (e.g. GTK not found)
-    logging.getLogger('pywebview').setLevel(logging.CRITICAL)
+    logging.getLogger("pywebview").setLevel(logging.CRITICAL)
 
     try:
         webview.start(icon=icon_path)

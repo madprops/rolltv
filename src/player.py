@@ -50,7 +50,7 @@ class Player:
         self.player_search_ids = {0: -1, 1: -1}
         self.menu_sidebar_visible = False
         self.globe_visible = False
-        self.globe_process = None
+        self.globe_process: Any = None
         self.current_flag_img: tk.PhotoImage | None = None
         self.pending_channel: dict[str, Any] | None = None
         self.current_channel_name = f"{info.full_name} v{info.version}"
@@ -657,9 +657,7 @@ class Player:
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
 
-        self.show_message(
-            "Sound FX Enabled" if args.sound_fx else "Sound FX Disabled"
-        )
+        self.show_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
 
     def exit_app(self) -> None:
         self.root.destroy()
