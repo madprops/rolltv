@@ -1008,7 +1008,7 @@ class Player:
                 or target_country in (ch.get("country_name") or "").lower()
             ]
 
-        recent_urls = {ch["url"] for ch in self.history[-data.recent_urls:]}
+        recent_urls = {ch["url"] for ch in self.history[-data.recent_urls :]}
         fresh_channels = [ch for ch in valid_channels if ch["url"] not in recent_urls]
 
         if len(fresh_channels) > 0:
