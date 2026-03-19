@@ -28,8 +28,6 @@ class Api:
         except Exception:
             pass
 
-        webview.windows[0].destroy()
-
 
 html = """
 <!DOCTYPE html>

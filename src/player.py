@@ -945,7 +945,6 @@ class Player:
         self.country_var.set(country_name)
         self.country_entry.config(fg=data.fg_color)
         self.on_country_var_change()
-        self.hide_globe()
         self.play_random()
 
     def check_globe_process(self) -> None:
