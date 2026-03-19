@@ -68,6 +68,7 @@ class Status:
                     return f"{b / 1000000:.1f}M"
                 elif b > 0:
                     return f"{b / 1000:.0f}K"
+
                 return "0"
 
             br_str = (
@@ -80,6 +81,7 @@ class Status:
                 getattr(
                     player_mpv, "video_format", getattr(player_mpv, "video_codec", None)
                 )
+
                 or "No Video"
             )
 
@@ -89,6 +91,7 @@ class Status:
                     "audio_codec_name",
                     getattr(player_mpv, "audio_codec", None),
                 )
+
                 or "No Audio"
             )
 
