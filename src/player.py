@@ -400,7 +400,10 @@ class Player:
         if self.sidebar_visible and not self.is_fullscreen:
             current_filter = self.history_filter_var.get()
 
-            if current_filter != self.history_filter_placeholder and current_filter != "":
+            if (
+                current_filter != self.history_filter_placeholder
+                and current_filter != ""
+            ):
                 if focused == self.history_filter_entry:
                     self.history_filter_var.set("")
                 else:
