@@ -17,6 +17,7 @@ from data import data
 from info import info
 from args import args
 from sound import sound
+from sidebar import Sidebar
 
 
 class Player:
@@ -281,29 +282,8 @@ class Player:
         self.main_content_frame = tk.Frame(root, bg=data.bg_color)
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.menu_sidebar_frame = tk.Frame(
-            self.main_content_frame,
-            bg=data.btn_bg,
-            width=200,
-            bd=0,
-            highlightthickness=0,
-        )
+        Sidebar(self)
 
-        self.menu_sidebar_frame.pack_propagate(False)
-        self.main_menu_item("Toggle FX", self.toggle_sound_fx)
-        self.main_menu_item("Toggle Status", self.toggle_status)
-        self.main_menu_item("Exit", self.exit_app)
-
-        self.sidebar_version_label = tk.Label(
-            self.menu_sidebar_frame,
-            text=f"v{info.version}",
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.info_fg,
-            anchor="w",
-        )
-
-        self.sidebar_version_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
         self.video_container = tk.Frame(self.main_content_frame, bg="black")
         self.video_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.video_container.grid_rowconfigure(0, weight=1)
@@ -313,92 +293,6 @@ class Player:
         self.video_container.bind("<MouseWheel>", self.on_mouse_wheel)
         self.video_container.bind("<Button-3>", self.toggle_pause)
         self.video_container.bind("<Double-Button-1>", self.toggle_maximize)
-
-        self.sidebar_frame = tk.Frame(
-            self.main_content_frame,
-            bg=data.btn_bg,
-            width=300,
-            bd=0,
-            highlightthickness=0,
-        )
-
-        self.sidebar_frame.pack_propagate(False)
-        self.sidebar_filter_placeholder = "Filter"
-        self.history_filter_var = tk.StringVar(value=self.sidebar_filter_placeholder)
-        self.history_filter_var.trace_add("write", self.update_sidebar)
-        self.country_filter_var = tk.StringVar(value=self.sidebar_filter_placeholder)
-        self.country_filter_var.trace_add("write", self.update_sidebar)
-
-        self.sidebar_filter_frame = tk.Frame(
-            self.sidebar_frame,
-            bg=data.btn_bg,
-            highlightbackground=data.btn_border,
-            highlightcolor=data.btn_border,
-            highlightthickness=0,
-            bd=0,
-        )
-
-        self.sidebar_filter_entry = tk.Entry(
-            self.sidebar_filter_frame,
-            textvariable=self.history_filter_var,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg="gray",
-            insertbackground=data.accent_color,
-            relief=tk.FLAT,
-            highlightthickness=0,
-            bd=0,
-        )
-
-        self.sidebar_filter_entry.pack(fill=tk.X, padx=8, pady=4)
-        self.sidebar_filter_entry.bind("<FocusIn>", self.on_sidebar_filter_focus_in)
-        self.sidebar_filter_entry.bind("<FocusOut>", self.on_sidebar_filter_focus_out)
-        self.sidebar_listbox_frame = tk.Frame(self.sidebar_frame, bg=data.btn_bg)
-        self.sidebar_listbox_frame.pack(fill=tk.BOTH, expand=True)
-
-        style.configure(
-            "Sidebar.Treeview",
-            background=data.btn_bg,
-            foreground=data.fg_color,
-            fieldbackground=data.btn_bg,
-            borderwidth=0,
-            bordercolor=data.btn_bg,
-            lightcolor=data.btn_bg,
-            darkcolor=data.btn_bg,
-            font=data.font_ui,
-            rowheight=24,
-        )
-
-        style.map(
-            "Sidebar.Treeview",
-            background=[("selected", data.list_select_bg)],
-            foreground=[("selected", data.fg_color)],
-        )
-
-        self.sidebar_listbox = ttk.Treeview(
-            self.sidebar_listbox_frame,
-            style="Sidebar.Treeview",
-            show="tree",
-            selectmode="browse",
-        )
-
-        self.scrollbar = tk.Scrollbar(
-            self.sidebar_listbox_frame,
-            command=self.sidebar_listbox.yview,
-            bg=data.scrollbar_color,
-            bd=0,
-            highlightthickness=0,
-            relief=tk.FLAT,
-        )
-
-        self.sidebar_listbox.config(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.sidebar_listbox.pack(
-            side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10
-        )
-
-        self.sidebar_listbox.bind("<Button-1>", self.on_sidebar_click)
         self.current_volume = 100
         self.frames = []
         self.players = []
@@ -1684,24 +1578,3 @@ class Player:
         self.root.attributes("-topmost", False)
         self.root.lift()
         self.root.focus_force()
-
-    def main_menu_item(self, text: str, command: Any) -> None:
-        btn = tk.Button(
-            self.menu_sidebar_frame,
-            text=text,
-            command=command,
-            font=data.font_ui,
-            bg=data.btn_bg,
-            fg=data.fg_color,
-            activebackground=data.btn_active,
-            activeforeground=data.accent_color,
-            relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightthickness=0,
-            bd=0,
-            padx=12,
-            pady=4,
-            anchor="w",
-        )
-
-        btn.pack(fill=tk.X, padx=10, pady=5)
