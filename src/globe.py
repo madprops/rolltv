@@ -84,32 +84,32 @@ html = """
     <div id="globeViz"></div>
 
     <script>
-        fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
+        fetch("https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson")
             .then(res => res.json())
             .then(countries => {
                 let clickedD = null;
 
                 const world = Globe()
-                    (document.getElementById('globeViz'))
-                    .backgroundColor('#1A1B26')
+                    (document.getElementById("globeViz"))
+                    .backgroundColor("#1A1B26")
                     .showAtmosphere(true)
-                    .atmosphereColor('#7AA2F7')
-                    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
+                    .atmosphereColor("#7AA2F7")
+                    .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-dark.jpg")
                     .polygonsData(countries.features)
                     .polygonAltitude(0.01)
-                    .polygonCapColor(d => d === clickedD ? 'lightgreen' : '#33467C')
-                    .polygonSideColor(() => '#1F2335')
-                    .polygonStrokeColor(() => '#7AA2F7')
+                    .polygonCapColor(d => d === clickedD ? "lightgreen" : "#33467C")
+                    .polygonSideColor(() => "#1F2335")
+                    .polygonStrokeColor(() => "#7AA2F7")
 
                     .onPolygonHover(hoverD => {
-                        world.polygonCapColor(d => d === clickedD ? 'lightgreen' : (d === hoverD ? '#7AA2F7' : '#33467C'));
-                        const tooltip = document.getElementById('hover-tooltip');
-                        tooltip.innerText = hoverD ? hoverD.properties.ADMIN : '';
+                        world.polygonCapColor(d => d === clickedD ? "lightgreen" : (d === hoverD ? "#7AA2F7" : "#33467C"));
+                        const tooltip = document.getElementById("hover-tooltip");
+                        tooltip.innerText = hoverD ? hoverD.properties.ADMIN : "";
                     })
 
                     .onPolygonClick(clickedPoly => {
                         clickedD = clickedPoly;
-                        world.polygonCapColor(d => d === clickedD ? 'lightgreen' : '#33467C');
+                        world.polygonCapColor(d => d === clickedD ? "lightgreen" : "#33467C");
 
                         if (window.pywebview) {
                             window.pywebview.api.select_country(clickedPoly.properties.ADMIN);
@@ -121,7 +121,7 @@ html = """
                 world.controls().autoRotate = false;
                 world.controls().autoRotateSpeed = 1.0;
 
-                window.addEventListener('resize', (event) => {
+                window.addEventListener("resize", (event) => {
                     world.width([event.target.innerWidth]);
                     world.height([event.target.innerHeight]);
                 });
@@ -145,6 +145,7 @@ if __name__ == "__main__":
             int(sys.argv[3]),
             int(sys.argv[4]),
         )
+
         app_name = sys.argv[5]
 
     api = Api(app_name)
