@@ -27,7 +27,7 @@ class Data:
         self.btn_border = "#292E42"
         self.font_ui = ("sans-serif", 11)
         self.name_font = ("sans-serif", 14, "bold")
-        self.roll_text = "🎲 Roll"
+        self.roll_text = "🎲  Roll"
         self.any_language = "Language"
         self.max_history = 1000
         self.max_retries = 10

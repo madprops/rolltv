@@ -12,6 +12,7 @@ from typing import Any, cast
 from utils import utils
 from data import data
 from info import info
+from args import args
 
 
 class Player:
@@ -71,18 +72,21 @@ class Player:
         self.name_label.pack(anchor=tk.W)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT, padx=(0, 20))
-        self.stats_frame = tk.Frame(root, bg=data.btn_bg)
-        self.stats_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
-        self.stats_label = tk.Label(
-            self.stats_frame,
-            text="",
-            font=("Monospace", 10),
-            bg=data.btn_bg,
-            fg=data.info_fg,
-        )
+        if args.show_status:
+            self.status_frame = tk.Frame(root, bg=data.btn_bg)
+            self.status_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
-        self.stats_label.pack(anchor=tk.W, padx=20, pady=4)
+            self.status_label = tk.Label(
+                self.status_frame,
+                text="",
+                font=("Monospace", 10),
+                bg=data.btn_bg,
+                fg=data.info_fg,
+            )
+
+            self.status_label.pack(anchor=tk.W, padx=20, pady=4)
+
         self.saved_data = self.load_data()
         country_val = self.saved_data.get("country", self.country_placeholder)
         self.country_var = tk.StringVar(value=country_val)
@@ -360,7 +364,7 @@ class Player:
         for player in self.players:
             self.register_player_bindings(player)
 
-        self.update_stats_loop()
+        self.update_status_loop()
 
     def show_name_message(self, text: str) -> None:
         self.name_label.config(text=text)
@@ -372,8 +376,11 @@ class Player:
             data.info_restore_delay, self.restore_channel_name
         )
 
-    def set_stats(self, text: str) -> None:
-        self.stats_label.config(text=text)
+    def set_status(self, text: str) -> None:
+        if not args.show_status:
+            return
+
+        self.status_label.config(text=text)
 
     def restore_channel_name(self) -> None:
         if self.msg_timeout_id is not None:
@@ -382,11 +389,14 @@ class Player:
         self.msg_timeout_id = None
         self.name_label.config(text=self.current_channel_name)
 
-    def update_stats_loop(self) -> None:
-        self.update_stats()
-        self.root.after(1000, self.update_stats_loop)
+    def update_status_loop(self) -> None:
+        self.update_status()
+        self.root.after(1000, self.update_status_loop)
 
-    def update_stats(self) -> None:
+    def update_status(self) -> None:
+        if not args.show_status:
+            return
+
         if self.tuning:
             self.show_name_message("Tuning...")
             return
@@ -447,10 +457,10 @@ class Player:
             drops_str = f"Drops: {d_drops + vo_drops}"
             hwdec = getattr(player, "hwdec_current", None)
             hw_str = f"HW: {hwdec.upper()}" if hwdec and hwdec != "no" else "SW"
-            stats = f"{res} | {fps_str} | {br_str} | {codecs} | {hw_str} | {cache_str} | {drops_str}"
-            self.set_stats(stats)
+            status = f"{res} | {fps_str} | {br_str} | {codecs} | {hw_str} | {cache_str} | {drops_str}"
+            self.set_status(status)
         else:
-            self.set_stats("")
+            self.set_status("")
 
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
@@ -493,14 +503,14 @@ class Player:
 
         if self.is_fullscreen:
             self.top_frame.pack_forget()
-            self.stats_frame.pack_forget()
+            self.status_frame.pack_forget()
 
             if self.sidebar_visible:
                 self.sidebar_frame.pack_forget()
         else:
             self.top_frame.pack(fill=tk.X, pady=10, before=self.main_content_frame)
 
-            self.stats_frame.pack(
+            self.status_frame.pack(
                 side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
             )
 
