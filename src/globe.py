@@ -37,16 +37,19 @@ class Api:
 
 
 def stdin_listener(window):
-    for line in sys.stdin:
-        try:
-            parts = line.strip().split(",")
+    try:
+        for line in sys.stdin:
+            try:
+                parts = line.strip().split(",")
 
-            if len(parts) == 4:
-                x, y, w, h = map(int, parts)
-                window.resize(w, h)
-                window.move(x, y)
-        except Exception:
-            pass
+                if len(parts) == 4:
+                    x, y, w, h = map(int, parts)
+                    window.resize(w, h)
+                    window.move(x, y)
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 
 html = """
