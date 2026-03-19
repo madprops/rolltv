@@ -31,8 +31,8 @@ class Data:
         self.status_font = ("Monospace", 12)
         self.roll_text = "Roll"
         self.any_language = "Language"
-        self.max_history_items = 200
-        self.max_country_items = 200
+        self.max_history_items = 1000
+        self.max_country_items = 1000
         self.max_retries = 10
         self.width = 1200
         self.height = 800
