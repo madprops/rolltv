@@ -25,7 +25,7 @@ class Data:
         self.btn_active = "#24283B"
         self.info_fg = "#888888"
         self.list_select_bg = "#33467C"
-        self.btn_border = "#292E42"
+        self.btn_border = "#1F2335"
         self.font_ui = ("sans-serif", 11)
         self.name_font = ("sans-serif", 14, "bold")
         self.status_font = ("Monospace", 12)

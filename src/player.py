@@ -27,6 +27,7 @@ class Player:
         self.is_roll = False
         self.search_id = 0
         self.player_search_ids = {0: -1, 1: -1}
+        self.menu_sidebar_visible = False
         self.pending_channel: dict[str, Any] | None = None
         self.current_channel_name = f"{info.full_name} v{info.version}"
         self.current_country = "Unknown"
@@ -52,18 +53,33 @@ class Player:
         self.root.configure(bg=data.bg_color)
         script_dir = os.path.dirname(os.path.abspath(__file__))
         icon_path = os.path.join(script_dir, "icon.png")
+        self.menu_icon_photo = None
+        self.menu_icon = None
 
         if os.path.exists(icon_path):
             try:
-                img = tk.PhotoImage(file=icon_path)
-                self.root.iconphoto(True, img)
+                self.menu_icon_photo = tk.PhotoImage(file=icon_path)
+                self.root.iconphoto(True, self.menu_icon_photo)
+                self.menu_icon = self.menu_icon_photo.subsample(5, 5)
             except Exception as e:
                 utils.print(f"Could not load icon: {e}")
 
         self.top_frame = tk.Frame(root, bg=data.bg_color)
         self.top_frame.pack(fill=tk.X, pady=10)
+
+        if self.menu_icon:
+            self.menu_btn = tk.Label(
+                self.top_frame,
+                image=self.menu_icon,
+                bg=data.bg_color,
+                cursor="hand2",
+            )
+
+            self.menu_btn.pack(side=tk.LEFT, padx=(20, 0))
+            self.menu_btn.bind("<Button-1>", self.toggle_menu)
+
         self.info_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.info_frame.pack(side=tk.LEFT, padx=(20, 0))
+        self.info_frame.pack(side=tk.LEFT, padx=(10, 0))
 
         self.name_label = tk.Label(
             self.info_frame,
@@ -78,20 +94,18 @@ class Player:
         self.name_label.bind("<Button-1>", self.cancel_tuning)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT, padx=(0, 20))
+        self.status_frame = tk.Frame(root, bg=data.btn_bg)
+        self.status_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
-        if args.show_status:
-            self.status_frame = tk.Frame(root, bg=data.btn_bg)
-            self.status_frame.pack(side=tk.BOTTOM, fill=tk.X)
+        self.status_label = tk.Label(
+            self.status_frame,
+            text="",
+            font=data.status_font,
+            bg=data.btn_bg,
+            fg=data.info_fg,
+        )
 
-            self.status_label = tk.Label(
-                self.status_frame,
-                text="",
-                font=data.status_font,
-                bg=data.btn_bg,
-                fg=data.info_fg,
-            )
-
-            self.status_label.pack(anchor=tk.W, padx=20, pady=4)
+        self.status_label.pack(anchor=tk.W, padx=20, pady=4)
 
         self.saved_data = self.load_data()
         country_val = self.saved_data.get("country", self.country_placeholder)
@@ -248,6 +262,48 @@ class Player:
         self.play_btn.pack(side=tk.LEFT, padx=5)
         self.main_content_frame = tk.Frame(root, bg=data.bg_color)
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.menu_sidebar_frame = tk.Frame(
+            self.main_content_frame, bg=data.btn_bg, width=200
+        )
+
+        self.menu_sidebar_frame.pack_propagate(False)
+
+        self.toggle_status_btn = tk.Button(
+            self.menu_sidebar_frame,
+            text="Toggle Status",
+            command=self.toggle_status,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg=data.fg_color,
+            activebackground=data.btn_active,
+            activeforeground=data.accent_color,
+            relief=tk.FLAT,
+            bd=0,
+            padx=12,
+            pady=4,
+            anchor="w",
+        )
+
+        self.toggle_status_btn.pack(fill=tk.X, padx=10, pady=(10, 5))
+
+        self.exit_btn = tk.Button(
+            self.menu_sidebar_frame,
+            text="Exit",
+            command=self.exit_app,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg=data.fg_color,
+            activebackground=data.btn_active,
+            activeforeground=data.accent_color,
+            relief=tk.FLAT,
+            bd=0,
+            padx=12,
+            pady=4,
+            anchor="w",
+        )
+
+        self.exit_btn.pack(fill=tk.X, padx=10, pady=5)
         self.video_container = tk.Frame(self.main_content_frame, bg="black")
         self.video_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.video_container.grid_rowconfigure(0, weight=1)
@@ -510,16 +566,26 @@ class Player:
 
         if self.is_fullscreen:
             self.top_frame.pack_forget()
-            self.status_frame.pack_forget()
+
+            if args.show_status:
+                self.status_frame.pack_forget()
 
             if self.sidebar_visible:
                 self.sidebar_frame.pack_forget()
+            if self.menu_sidebar_visible:
+                self.menu_sidebar_frame.pack_forget()
         else:
             self.top_frame.pack(fill=tk.X, pady=10, before=self.main_content_frame)
 
-            self.status_frame.pack(
-                side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
-            )
+            if args.show_status:
+                self.status_frame.pack(
+                    side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
+                )
+
+            if self.menu_sidebar_visible:
+                self.menu_sidebar_frame.pack(
+                    side=tk.LEFT, fill=tk.Y, before=self.video_container
+                )
 
             if self.sidebar_visible:
                 self.sidebar_frame.pack(
@@ -856,6 +922,37 @@ class Player:
             self.hide_history()
         else:
             self.show_history()
+
+    def toggle_menu(self, event: Any = None) -> None:
+        if self.menu_sidebar_visible:
+            self.hide_menu()
+        else:
+            self.show_menu()
+
+    def show_menu(self) -> None:
+        self.menu_sidebar_frame.pack(side=tk.LEFT, fill=tk.Y, before=self.video_container)
+        self.menu_sidebar_visible = True
+
+        if self.menu_icon:
+            self.menu_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
+
+    def hide_menu(self) -> None:
+        self.menu_sidebar_frame.pack_forget()
+        self.menu_sidebar_visible = False
+
+        if self.menu_icon:
+            self.menu_btn.config(bg=data.bg_color, relief=tk.FLAT)
+
+    def toggle_status(self) -> None:
+        args.show_status = not args.show_status
+
+        if args.show_status:
+            self.status_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
+        else:
+            self.status_btn.config(bg=data.btn_bg, relief=tk.FLAT)
+
+    def exit_app(self) -> None:
+        self.root.destroy()
 
     def update_sidebar(self, *args: Any) -> None:
         active_url = None
@@ -1264,6 +1361,9 @@ class Player:
                 status = "Paused" if player.pause else "Playing"
                 player.show_text(status)
 
+    def exit_app(self) -> None:
+        self.root.destroy()
+
     def start_ipc_listener(self) -> None:
         def listener() -> None:
             if os.name == "posix":
@@ -1285,6 +1385,7 @@ class Player:
                 port = (
                     50000 + int(hashlib.md5(info.name.encode()).hexdigest(), 16) % 10000
                 )
+
                 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
                 try:
