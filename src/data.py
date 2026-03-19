@@ -22,10 +22,12 @@ class Data:
         self.btn_active = "#2a2a3f"
         self.btn_border = "#28283d"
         self.font_ui = ("Monospace", 12, "bold")
-        self.roll_text = "🎲 Roll TV"
-        self.any_language = "Any Language"
+        self.roll_text = "🎲 Roll"
+        self.any_language = "Language"
         self.max_history = 100
         self.max_retries = 10
+        self.width = 1200
+        self.height = 800
 
 
 data = Data()

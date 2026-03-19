@@ -11,6 +11,7 @@ from typing import Any, cast
 
 from utils import utils
 from data import data
+from info import info
 
 
 class Player:
@@ -24,9 +25,9 @@ class Player:
         self.history = self.load_history()
         self.sidebar_visible = False
         self.stall_retries = 0
-        self.placeholder_text = "Country name or code"
+        self.country_placeholder = "Country"
         self.root.title(data.title)
-        self.root.geometry("1000x600")
+        self.root.geometry(f"{data.width}x{data.height}")
         self.root.configure(bg=data.bg_color)
         script_dir = os.path.dirname(os.path.abspath(__file__))
         icon_path = os.path.join(script_dir, "icon.png")
@@ -43,7 +44,7 @@ class Player:
 
         self.name_label = tk.Label(
             self.top_frame,
-            text="Click the dice to tune in",
+            text=f"{info.full_name} v{info.version}",
             font=data.font_ui,
             bg=data.bg_color,
             fg=data.fg_color,
@@ -52,7 +53,7 @@ class Player:
         self.name_label.pack(side=tk.LEFT)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
         self.btn_frame.pack(side=tk.RIGHT)
-        self.country_var = tk.StringVar(value=self.placeholder_text)
+        self.country_var = tk.StringVar(value=self.country_placeholder)
 
         self.country_entry = tk.Entry(
             self.btn_frame,
@@ -61,7 +62,7 @@ class Player:
             bg=data.btn_bg,
             fg="gray",
             insertbackground=data.fg_color,
-            width=22,
+            width=18,
             relief=tk.FLAT,
             highlightbackground=data.btn_border,
             highlightcolor=data.btn_border,
@@ -110,7 +111,7 @@ class Player:
             values=[data.any_language] + self.display_languages,
             state="readonly",
             font=data.font_ui,
-            width=15,
+            width=16,
         )
 
         self.lang_cb.pack(side=tk.LEFT, padx=(0, 10))
@@ -265,13 +266,13 @@ class Player:
             self.root.after(500, self.play_specific, last_channel)
 
     def on_country_focus_in(self, event: Any) -> None:
-        if self.country_var.get() == self.placeholder_text:
+        if self.country_var.get() == self.country_placeholder:
             self.country_var.set("")
             self.country_entry.config(fg=data.fg_color)
 
     def on_country_focus_out(self, event: Any) -> None:
         if self.country_var.get().strip() == "":
-            self.country_var.set(self.placeholder_text)
+            self.country_var.set(self.country_placeholder)
             self.country_entry.config(fg="gray")
 
     def setup_languages(self) -> None:
@@ -410,7 +411,7 @@ class Player:
 
         target_country = self.country_var.get().strip().lower()
 
-        if (target_country != "") and (target_country != self.placeholder_text):
+        if (target_country != "") and (target_country != self.country_placeholder):
             filtered_by_country = []
 
             for ch in valid_channels:
