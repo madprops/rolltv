@@ -6,7 +6,6 @@ import socket
 import hashlib
 import tempfile
 import threading
-import emoji
 import subprocess
 import tkinter as tk
 import urllib.request
@@ -283,14 +282,17 @@ class Player:
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
 
         self.menu_sidebar_frame = tk.Frame(
-            self.main_content_frame, bg=data.btn_bg, width=200, bd=0, highlightthickness=0
+            self.main_content_frame,
+            bg=data.btn_bg,
+            width=200,
+            bd=0,
+            highlightthickness=0,
         )
 
         self.menu_sidebar_frame.pack_propagate(False)
         self.main_menu_item("Toggle FX", self.toggle_sound_fx)
         self.main_menu_item("Toggle Status", self.toggle_status)
         self.main_menu_item("Exit", self.exit_app)
-
 
         self.sidebar_version_label = tk.Label(
             self.menu_sidebar_frame,
@@ -313,7 +315,11 @@ class Player:
         self.video_container.bind("<Double-Button-1>", self.toggle_maximize)
 
         self.sidebar_frame = tk.Frame(
-            self.main_content_frame, bg=data.btn_bg, width=300, bd=0, highlightthickness=0
+            self.main_content_frame,
+            bg=data.btn_bg,
+            width=300,
+            bd=0,
+            highlightthickness=0,
         )
 
         self.sidebar_frame.pack_propagate(False)
@@ -628,7 +634,11 @@ class Player:
             return
 
         if self.active_sidebar and not self.is_fullscreen:
-            active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+            active_var = (
+                self.history_filter_var
+                if self.active_sidebar == "history"
+                else self.country_filter_var
+            )
             current_filter = active_var.get()
 
             if (
@@ -662,13 +672,21 @@ class Player:
         self.save_data()
 
     def on_sidebar_filter_focus_in(self, event: Any) -> None:
-        active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+        active_var = (
+            self.history_filter_var
+            if self.active_sidebar == "history"
+            else self.country_filter_var
+        )
         if active_var.get() == self.sidebar_filter_placeholder:
             active_var.set("")
             self.sidebar_filter_entry.config(fg=data.fg_color)
 
     def on_sidebar_filter_focus_out(self, event: Any) -> None:
-        active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+        active_var = (
+            self.history_filter_var
+            if self.active_sidebar == "history"
+            else self.country_filter_var
+        )
         if active_var.get().strip() == "":
             active_var.set(self.sidebar_filter_placeholder)
             self.sidebar_filter_entry.config(fg="gray")
@@ -685,7 +703,11 @@ class Player:
         if getattr(event, "char", "") and event.char.isprintable():
             self.sidebar_filter_entry.focus_set()
 
-            active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+            active_var = (
+                self.history_filter_var
+                if self.active_sidebar == "history"
+                else self.country_filter_var
+            )
             if active_var.get() == self.sidebar_filter_placeholder:
                 active_var.set("")
                 self.sidebar_filter_entry.config(fg=data.fg_color)
@@ -695,7 +717,11 @@ class Player:
         elif getattr(event, "keysym", "") == "BackSpace":
             self.sidebar_filter_entry.focus_set()
 
-            active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+            active_var = (
+                self.history_filter_var
+                if self.active_sidebar == "history"
+                else self.country_filter_var
+            )
             if active_var.get() != self.sidebar_filter_placeholder:
                 current = self.sidebar_filter_entry.get()
 
@@ -964,7 +990,9 @@ class Player:
             else:
                 self.sidebar_filter_entry.config(fg=data.fg_color)
 
-        self.sidebar_filter_frame.pack(fill=tk.X, padx=10, pady=(10, 0), before=self.sidebar_listbox_frame)
+        self.sidebar_filter_frame.pack(
+            fill=tk.X, padx=10, pady=(10, 0), before=self.sidebar_listbox_frame
+        )
 
         self.update_sidebar()
         self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, before=self.video_container)
@@ -1011,11 +1039,15 @@ class Player:
         else:
             self.status_frame.pack_forget()
 
-        self.show_name_message("Status Bar Enabled" if args.show_status else "Status Bar Disabled")
+        self.show_name_message(
+            "Status Bar Enabled" if args.show_status else "Status Bar Disabled"
+        )
 
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
-        self.show_name_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
+        self.show_name_message(
+            "Sound FX Enabled" if args.sound_fx else "Sound FX Disabled"
+        )
 
     def exit_app(self) -> None:
         self.root.destroy()
@@ -1035,7 +1067,11 @@ class Player:
         if not hasattr(self, "flag_images"):
             self.flag_images = {}
 
-        active_var = self.history_filter_var if self.active_sidebar == "history" else self.country_filter_var
+        active_var = (
+            self.history_filter_var
+            if self.active_sidebar == "history"
+            else self.country_filter_var
+        )
         filter_text = active_var.get().lower()
 
         if filter_text == self.sidebar_filter_placeholder.lower():
@@ -1067,7 +1103,9 @@ class Player:
 
                 if country_match:
                     name_match = filter_text in ch["name"].lower()
-                    country_name_match = filter_text in ch.get("country_name", "").lower()
+                    country_name_match = (
+                        filter_text in ch.get("country_name", "").lower()
+                    )
 
                     if name_match or country_name_match:
                         self.sidebar_items.append(ch)
@@ -1078,7 +1116,9 @@ class Player:
 
             if isinstance(c_code, str) and len(c_code) == 2:
                 c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
-                flag_path = os.path.expanduser(f"~/.config/{info.name}/flags/{c_code}.png")
+                flag_path = os.path.expanduser(
+                    f"~/.config/{info.name}/flags/{c_code}.png"
+                )
 
                 if os.path.exists(flag_path):
                     if c_code not in self.flag_images:
@@ -1088,10 +1128,14 @@ class Player:
                             pass
                     img = self.flag_images.get(c_code)
                 else:
-                    threading.Thread(target=self.fetch_flag_only, args=(c_code,), daemon=True).start()
+                    threading.Thread(
+                        target=self.fetch_flag_only, args=(c_code,), daemon=True
+                    ).start()
 
             if img:
-                self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}", image=img)
+                self.sidebar_listbox.insert(
+                    "", tk.END, text=f"   {ch['name']}", image=img
+                )
             else:
                 self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}")
 
@@ -1422,7 +1466,11 @@ class Player:
 
         if isinstance(c_code, str) and len(c_code) == 2:
             c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
-            threading.Thread(target=self.load_or_fetch_flag, args=(c_code, self.current_channel_name), daemon=True).start()
+            threading.Thread(
+                target=self.load_or_fetch_flag,
+                args=(c_code, self.current_channel_name),
+                daemon=True,
+            ).start()
         else:
             self.clear_flag_image()
         self.restore_channel_name()

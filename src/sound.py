@@ -4,6 +4,7 @@ import struct
 import tempfile
 import platform
 
+
 class Sound:
     def create(self):
         self.tuning_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
@@ -40,14 +41,19 @@ class Sound:
 
         if system == "Windows":
             import winsound
-            winsound.PlaySound(self.tuning_wav.name, winsound.SND_FILENAME | winsound.SND_ASYNC)
+
+            winsound.PlaySound(
+                self.tuning_wav.name, winsound.SND_FILENAME | winsound.SND_ASYNC
+            )
 
         if system == "Darwin":
             import subprocess
+
             subprocess.Popen(["afplay", self.tuning_wav.name])
 
         if system == "Linux":
             import subprocess
+
             subprocess.Popen(["aplay", "-q", self.tuning_wav.name])
 
 
