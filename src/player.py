@@ -212,7 +212,6 @@ class Player:
         )
 
         self.sidebar_frame.pack_propagate(False)
-
         self.history_filter_placeholder = "Filter"
         self.history_filter_var = tk.StringVar(value=self.history_filter_placeholder)
         self.history_filter_var.trace_add("write", self.update_sidebar)
@@ -230,9 +229,11 @@ class Player:
             highlightthickness=1,
             bd=0,
         )
+
         self.history_filter_entry.pack(fill=tk.X, padx=10, pady=(10, 0))
         self.history_filter_entry.bind("<FocusIn>", self.on_history_filter_focus_in)
         self.history_filter_entry.bind("<FocusOut>", self.on_history_filter_focus_out)
+        self.history_filter_entry.bind("<Return>", self.on_history_filter_return)
 
         self.history_listbox = tk.Listbox(
             self.sidebar_frame,
@@ -377,6 +378,16 @@ class Player:
         if self.history_filter_var.get().strip() == "":
             self.history_filter_var.set(self.history_filter_placeholder)
             self.history_filter_entry.config(fg="gray")
+
+    def on_history_filter_return(self, event: Any) -> str:
+        filter_text = self.history_filter_var.get().strip()
+
+        if filter_text != "" and filter_text != self.history_filter_placeholder:
+            if len(self.filtered_history) > 0:
+                self.root.focus_set()
+                self.root.after(0, self.play_specific, self.filtered_history[0])
+
+        return "break"
 
     def on_country_return(self, event: Any) -> str:
         self.root.focus_set()
