@@ -321,7 +321,13 @@ class Player:
 
         if sel_lang != data.any_language:
             target_code = self.lang_map_rev.get(sel_lang, sel_lang)
-            valid_channels = [ch for ch in self.channels if target_code in ch.get("languages", [])]
+            valid_channels = []
+
+            for ch in self.channels:
+                langs = ch.get("languages", [])
+
+                if ((target_code in langs) and (len(langs) <= 2)):
+                    valid_channels.append(ch)
 
         if len(valid_channels) == 0:
             self.root.after(0, self.reset_button)
@@ -339,11 +345,11 @@ class Player:
                 req = urllib.request.Request(
                     candidate["url"],
                     method="GET",
-                    headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-100"}
+                    headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-100"},
                 )
 
                 with urllib.request.urlopen(req, timeout=3) as response:
-                    if response.status == 200 or response.status == 206:
+                    if ((response.status == 200) or (response.status == 206)):
                         working_channel = candidate
             except Exception:
                 continue

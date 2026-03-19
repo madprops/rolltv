@@ -61,6 +61,7 @@ def get_channels_data():
                 if feed_id:
                     if feed_id in feed_dict:
                         langs = feed_dict[feed_id].get("languages", [])
+
                 merged.append({"name": ch_info.get("name", "Unknown"), "url": st.get("url", ""), "languages": langs})
     return merged
 
