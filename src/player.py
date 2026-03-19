@@ -934,6 +934,7 @@ class Player:
             return
 
         self.globe_visible = False
+
         if self.globe_process:
             try:
                 self.globe_process.terminate()
