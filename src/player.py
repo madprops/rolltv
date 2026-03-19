@@ -87,8 +87,19 @@ class Player:
         country_val = self.saved_data.get("country", self.country_placeholder)
         self.country_var = tk.StringVar(value=country_val)
 
-        self.country_entry = tk.Entry(
+        self.country_frame = tk.Frame(
             self.btn_frame,
+            bg=data.btn_bg,
+            highlightbackground=data.btn_border,
+            highlightcolor=data.btn_border,
+            highlightthickness=1,
+            bd=0,
+        )
+
+        self.country_frame.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.country_entry = tk.Entry(
+            self.country_frame,
             textvariable=self.country_var,
             font=data.font_ui,
             bg=data.btn_bg,
@@ -96,13 +107,11 @@ class Player:
             insertbackground=data.fg_color,
             width=18,
             relief=tk.FLAT,
-            highlightbackground=data.btn_border,
-            highlightcolor=data.btn_border,
-            highlightthickness=1,
+            highlightthickness=0,
             bd=0,
         )
 
-        self.country_entry.pack(side=tk.LEFT, padx=(0, 10))
+        self.country_entry.pack(side=tk.LEFT, padx=8, pady=4)
         self.country_entry.bind("<FocusIn>", self.on_country_focus_in)
         self.country_entry.bind("<FocusOut>", self.on_country_focus_out)
         self.country_entry.bind("<Return>", self.on_country_return)
@@ -123,6 +132,7 @@ class Player:
             bordercolor=data.btn_border,
             lightcolor=data.btn_bg,
             darkcolor=data.btn_bg,
+            padding=5,
         )
 
         style.map(
@@ -243,21 +253,30 @@ class Player:
         self.history_filter_var = tk.StringVar(value=self.history_filter_placeholder)
         self.history_filter_var.trace_add("write", self.update_sidebar)
 
-        self.history_filter_entry = tk.Entry(
+        self.history_filter_frame = tk.Frame(
             self.sidebar_frame,
-            textvariable=self.history_filter_var,
-            font=data.font_ui,
             bg=data.btn_bg,
-            fg="gray",
-            insertbackground=data.fg_color,
-            relief=tk.FLAT,
             highlightbackground=data.btn_border,
             highlightcolor=data.btn_border,
             highlightthickness=1,
             bd=0,
         )
 
-        self.history_filter_entry.pack(fill=tk.X, padx=10, pady=(10, 0))
+        self.history_filter_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
+
+        self.history_filter_entry = tk.Entry(
+            self.history_filter_frame,
+            textvariable=self.history_filter_var,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg="gray",
+            insertbackground=data.fg_color,
+            relief=tk.FLAT,
+            highlightthickness=0,
+            bd=0,
+        )
+
+        self.history_filter_entry.pack(fill=tk.X, padx=8, pady=4)
         self.history_filter_entry.bind("<FocusIn>", self.on_history_filter_focus_in)
         self.history_filter_entry.bind("<FocusOut>", self.on_history_filter_focus_out)
 
