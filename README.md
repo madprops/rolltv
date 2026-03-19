@@ -12,4 +12,4 @@ This application depends on the `libmpv` C library. You must install it on your 
 
 `pipx install git+https://github.com/madprops/rolltv --force`
 
-![](src/icon.png)
+![](screenshot.png)
