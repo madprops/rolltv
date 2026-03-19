@@ -869,7 +869,11 @@ class Player:
         self.tuning = True
         self.is_roll = True
         self.search_id += 1
-        thread = threading.Thread(target=self.find_live_stream, args=(self.search_id,), daemon=True)
+
+        thread = threading.Thread(
+            target=self.find_live_stream, args=(self.search_id,), daemon=True
+        )
+
         thread.start()
 
     def animate_roll_button(self) -> None:
@@ -1032,12 +1036,15 @@ class Player:
         if self.tuning_timeout is not None:
             self.root.after_cancel(self.tuning_timeout)
 
-        self.tuning_timeout = self.root.after(data.tuning_timeout, lambda: self.handle_timeout(search_id))
+        self.tuning_timeout = self.root.after(
+            data.tuning_timeout, lambda: self.handle_timeout(search_id)
+        )
+
         self.player_search_ids[next_idx] = search_id
         self.players[next_idx].play(channel["url"])
 
     def handle_timeout(self, search_id: int) -> None:
-        if not self.tuning or search_id != self.search_id:
+        if not self.tuning or (search_id != self.search_id):
             return
 
         if self.is_roll or self.stall_retries < data.max_retries:
@@ -1063,7 +1070,10 @@ class Player:
             new_search_id = self.search_id
 
             if self.is_roll:
-                thread = threading.Thread(target=self.find_live_stream, args=(new_search_id,), daemon=True)
+                thread = threading.Thread(
+                    target=self.find_live_stream, args=(new_search_id,), daemon=True
+                )
+
                 thread.start()
             elif self.pending_channel:
                 self.prepare_switch(self.pending_channel, new_search_id)
