@@ -96,7 +96,7 @@ class Tuner:
                 ch
                 for ch in valid_channels
                 if target_country == (ch.get("country_code") or "").lower()
-                or target_country in (ch.get("country_name") or "").lower()
+                or (len(target_country) > 2 and target_country in (ch.get("country_name") or "").lower())
             ]
 
         recent_urls = {ch["url"] for ch in self.player.history[-data.recent_urls :]}
@@ -252,10 +252,14 @@ class Tuner:
         self.player.current_url = self.player.pending_channel["url"]
         c_name = self.player.pending_channel.get("country_name", "")
         self.player.current_country = c_name.title() if c_name else "Unknown"
+
         self.player.current_channel_name = (
             f"{self.player.pending_channel.get('name', 'Unknown')}   "
         )
+
         c_code = self.player.pending_channel.get("country_code", "")
+        self.player.current_country_code = c_code.lower() if isinstance(c_code, str) else ""
+        self.player.schedule_update_country_count()
 
         if isinstance(c_code, str) and len(c_code) == 2:
             c_code = "gb" if c_code.lower() == "uk" else c_code.lower()

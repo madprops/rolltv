@@ -52,7 +52,9 @@ class Player:
         self.pending_channel: dict[str, Any] | None = None
         self.current_channel_name = f"{info.full_name} v{info.version}"
         self.current_country = "Unknown"
+        self.current_country_code = ""
         self.tuning_timeout: str | None = None
+        self.country_count_job: str | None = None
         self.msg_timeout_id: str | None = None
         self.history = store.load_history()
         self.sidebar_items: list[dict[str, Any]] = []
@@ -64,6 +66,7 @@ class Player:
         self.up_release_job: str | None = None
         self.down_release_job: str | None = None
         self.roll_anim_job: str | None = None
+        self.sidebar_update_job: str | None = None
         self.is_up_pressed = False
         self.is_down_pressed = False
         self.active_sidebar: str | None = None
@@ -83,6 +86,7 @@ class Player:
         self.tuner = Tuner(self)
         Topbar(self)
         self.status = Status(self)
+        self.schedule_update_country_count()
         self.main_content_frame = tk.Frame(root, bg=data.bg_color)
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -501,6 +505,35 @@ class Player:
     def on_country_var_change(self, *args: Any) -> None:
         if self.active_sidebar == "country":
             self.update_sidebar()
+        self.schedule_update_country_count()
+
+    def schedule_update_country_count(self, *args: Any) -> None:
+        if self.country_count_job is not None:
+            self.root.after_cancel(self.country_count_job)
+
+        self.country_count_job = self.root.after(300, self.update_country_count)
+
+    def update_country_count(self) -> None:
+        self.country_count_job = None
+        target_country = self.country_var.get().strip().lower()
+
+        if target_country == self.country_placeholder.lower():
+            target_country = ""
+
+        if target_country == "" and self.current_country_code != "":
+            target_country = self.current_country_code
+
+        if target_country == "":
+            self.country_btn.config(text="Country")
+            return
+
+        count = sum(
+            1 for ch in self.channels
+            if target_country == (ch.get("country_code") or "").lower()
+            or (len(target_country) > 2 and target_country in (ch.get("country_name") or "").lower())
+        )
+
+        self.country_btn.config(text=f"Country ({count})" if count > 0 else "Country")
 
     def setup_languages(self) -> None:
         self.lang_map = {
@@ -565,7 +598,7 @@ class Player:
             fill=tk.X, padx=10, pady=(10, 0), before=self.sidebar_listbox_frame
         )
 
-        self.update_sidebar()
+        self.update_sidebar(immediate=True)
         self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, before=self.video_container)
         self.root.focus_set()
 
@@ -624,7 +657,19 @@ class Player:
     def exit_app(self) -> None:
         self.root.destroy()
 
-    def update_sidebar(self, *args: Any) -> None:
+    def update_sidebar(self, *args: Any, immediate: bool = False) -> None:
+        if self.sidebar_update_job is not None:
+            self.root.after_cancel(self.sidebar_update_job)
+            self.sidebar_update_job = None
+
+        if immediate:
+            self._update_sidebar_impl()
+        else:
+            self.sidebar_update_job = self.root.after(150, self._update_sidebar_impl)
+
+    def _update_sidebar_impl(self) -> None:
+        self.sidebar_update_job = None
+
         if not self.active_sidebar:
             return
 
@@ -664,8 +709,8 @@ class Player:
             if target_country == self.country_placeholder.lower():
                 target_country = ""
 
-            if target_country == "" and self.current_country != "Unknown":
-                target_country = self.current_country.lower()
+            if target_country == "" and self.current_country_code != "":
+                target_country = self.current_country_code
 
             for ch in self.channels:
                 country_match = True
@@ -674,7 +719,7 @@ class Player:
                     c_code = (ch.get("country_code") or "").lower()
                     c_name = (ch.get("country_name") or "").lower()
 
-                    if target_country != c_code and target_country not in c_name:
+                    if target_country != c_code and not (len(target_country) > 2 and target_country in c_name):
                         country_match = False
 
                 if country_match:
