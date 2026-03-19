@@ -55,7 +55,11 @@ def get_channels_data() -> list[dict[str, Any]]:
         f_channels = executor.submit(fetch_json, data.channels_url, data.cache_channels)
         f_streams = executor.submit(fetch_json, data.streams_url, data.cache_streams)
         f_feeds = executor.submit(fetch_json, data.feeds_url, data.cache_feeds)
-        f_countries = executor.submit(fetch_json, data.countries_url, data.cache_countries)
+
+        f_countries = executor.submit(
+            fetch_json, data.countries_url, data.cache_countries
+        )
+
         channels_raw = f_channels.result()
         streams_raw = f_streams.result()
         feeds_raw = f_feeds.result()
@@ -63,7 +67,13 @@ def get_channels_data() -> list[dict[str, Any]]:
 
     channel_dict = {ch["id"]: ch for ch in channels_raw if "id" in ch}
     feed_dict = {f["id"]: f for f in feeds_raw if "id" in f}
-    country_dict = {c.get("code", "").lower(): c.get("name", "").lower() for c in countries_raw if "code" in c}
+
+    country_dict = {
+        c.get("code", "").lower(): c.get("name", "").lower()
+        for c in countries_raw
+        if "code" in c
+    }
+
     merged = []
 
     for st in streams_raw:

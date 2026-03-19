@@ -985,7 +985,11 @@ class Player:
 
         if sel_lang != data.any_language:
             target_code = self.lang_map_rev.get(sel_lang, sel_lang)
-            valid_channels = [ch for ch in valid_channels if target_code in (ch.get("languages") or [])]
+            valid_channels = [
+                ch
+                for ch in valid_channels
+                if target_code in (ch.get("languages") or [])
+            ]
 
         target_country = self.country_var.get().strip().lower()
 
@@ -993,7 +997,8 @@ class Player:
             target_country != self.country_placeholder.lower()
         ):
             valid_channels = [
-                ch for ch in valid_channels
+                ch
+                for ch in valid_channels
                 if target_country == (ch.get("country_code") or "").lower()
                 or target_country in (ch.get("country_name") or "").lower()
             ]
