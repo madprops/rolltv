@@ -18,6 +18,7 @@ class Api:
                 socket_path = os.path.join(
                     tempfile.gettempdir(), f"{self.app_name}_ipc.sock"
                 )
+
                 client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 client.connect(socket_path)
             else:
@@ -25,6 +26,7 @@ class Api:
                     50000
                     + int(hashlib.md5(self.app_name.encode()).hexdigest(), 16) % 10000
                 )
+
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client.connect(("127.0.0.1", port))
 
@@ -58,23 +60,29 @@ def stdin_listener(window):
 html = """
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <style>
         body { margin: 0; padding: 0; background-color: #1A1B26; overflow: hidden; }
         #hover-tooltip { position: absolute; top: 5px; right: 10px; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; font-size: 20px }
     </style>
+
     <script>
         console.warn = function() {};
         console.log = function() {};
         console.info = function() {};
     </script>
+
     <script src="https://unpkg.com/globe.gl"></script>
 </head>
+
 <body>
     <div id="hover-tooltip"></div>
     <div id="globeViz"></div>
+
     <script>
         fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
             .then(res => res.json())
@@ -92,11 +100,13 @@ html = """
                     .polygonCapColor(d => d === clickedD ? 'lightgreen' : '#33467C')
                     .polygonSideColor(() => '#1F2335')
                     .polygonStrokeColor(() => '#7AA2F7')
+
                     .onPolygonHover(hoverD => {
                         world.polygonCapColor(d => d === clickedD ? 'lightgreen' : (d === hoverD ? '#7AA2F7' : '#33467C'));
                         const tooltip = document.getElementById('hover-tooltip');
                         tooltip.innerText = hoverD ? hoverD.properties.ADMIN : '';
                     })
+
                     .onPolygonClick(clickedPoly => {
                         clickedD = clickedPoly;
                         world.polygonCapColor(d => d === clickedD ? 'lightgreen' : '#33467C');
@@ -105,6 +115,7 @@ html = """
                             window.pywebview.api.select_country(clickedPoly.properties.ADMIN);
                         }
                     })
+
                     .polygonsTransitionDuration(300);
 
                 world.controls().autoRotate = false;
