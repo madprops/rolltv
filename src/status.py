@@ -40,7 +40,9 @@ class Status:
             self.player.show_name_message("Tuning...")
             return
 
-        if not hasattr(self.player, "players") or not hasattr(self.player, "active_idx"):
+        if not hasattr(self.player, "players") or not hasattr(
+            self.player, "active_idx"
+        ):
             return
 
         player_mpv = self.player.players[self.player.active_idx]
