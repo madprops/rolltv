@@ -10,7 +10,6 @@ import json
 from utils import utils
 from data import data
 from player import Player
-from info import info
 
 
 def fetch_json(url, cache_file):
@@ -90,7 +89,7 @@ def main():
         sys.exit(1)
 
     root = tk.Tk()
-    app = Player(root, channels)
+    Player(root, channels)
     root.mainloop()
 
 

@@ -3,10 +3,8 @@ from tkinter import ttk
 import urllib.request
 import random
 import os
-import time
 import threading
 import subprocess
-import sys
 import mpv
 import json
 
