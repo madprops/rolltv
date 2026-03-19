@@ -340,6 +340,22 @@ class Player:
         def _on_right_click() -> None:
             self.root.after(0, self.toggle_pause)
 
+        @player.on_key_press("UP")  # type: ignore
+        def _on_up() -> None:
+            self.root.after(0, lambda: self.on_up_arrow(None))
+
+        @player.on_key_press("DOWN")  # type: ignore
+        def _on_down() -> None:
+            self.root.after(0, lambda: self.on_down_arrow(None))
+
+        @player.on_key_press("ENTER")  # type: ignore
+        def _on_enter() -> None:
+            self.root.after(0, lambda: self.on_return_key(None))
+
+        @player.on_key_press("ESC")  # type: ignore
+        def _on_esc() -> None:
+            self.root.after(0, lambda: self.exit_fullscreen(None))
+
     def toggle_maximize(self, event: Any = None) -> None:
         self.is_fullscreen = not self.is_fullscreen
         self.root.attributes("-fullscreen", self.is_fullscreen)
@@ -409,6 +425,9 @@ class Player:
         return None
 
     def on_up_arrow(self, event: Any) -> str | None:
+        if self.root.focus_get() == self.lang_cb:
+            return None
+
         if self.sidebar_visible:
             if self.history_active_index > 0:
                 self.history_active_index -= 1
@@ -418,6 +437,9 @@ class Player:
         return None
 
     def on_down_arrow(self, event: Any) -> str | None:
+        if self.root.focus_get() == self.lang_cb:
+            return None
+
         if self.sidebar_visible:
             if self.history_active_index < len(self.filtered_history) - 1:
                 self.history_active_index += 1
@@ -428,7 +450,7 @@ class Player:
 
     def on_return_key(self, event: Any) -> str | None:
         focused = self.root.focus_get()
-        if focused == self.country_entry:
+        if focused in (self.country_entry, self.lang_cb):
             return None
 
         if self.sidebar_visible:
@@ -548,11 +570,13 @@ class Player:
 
         self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
         self.sidebar_visible = True
+        self.root.focus_set()
 
     def hide_history(self) -> None:
         self.sidebar_frame.pack_forget()
         self.history_btn.config(bg=data.btn_bg, relief=tk.FLAT)
         self.sidebar_visible = False
+        self.root.focus_set()
 
     def toggle_history(self) -> None:
         if self.sidebar_visible:
