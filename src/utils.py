@@ -2,6 +2,7 @@ import sys
 import ctypes
 import ctypes.util
 
+
 class Utils:
     def __init__(self) -> None:
         self.ansi_colors = {
