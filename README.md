@@ -16,4 +16,4 @@ Then run this `pipx` command:
 
 This assumes you have `mpv` installed.
 
-![](screenshot.png)
+![](screenshot.jpg)
