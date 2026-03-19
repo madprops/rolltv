@@ -112,7 +112,7 @@ class Tuner:
             self.player.root.after(0, self.reset_button)
 
             self.player.root.after(
-                0, lambda: self.player.show_name_message("No channels for this filter")
+                0, lambda: self.player.show_message("No channels for this filter")
             )
 
             return
@@ -174,7 +174,7 @@ class Tuner:
 
             self.player.root.after(
                 0,
-                lambda: self.player.show_name_message(
+                lambda: self.player.show_message(
                     "Could not find a working stream."
                 ),
             )
@@ -223,7 +223,7 @@ class Tuner:
             next_idx = 1 if self.player.active_idx == 0 else 0
             self.player.player_search_ids[next_idx] = -1
             self.player.players[next_idx].stop()
-            self.player.show_name_message(
+            self.player.show_message(
                 f"Stream stalled {data.max_retries} times. Roll again."
             )
 

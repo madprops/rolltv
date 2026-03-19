@@ -159,7 +159,7 @@ class Player:
         self.ipc_listener = IPCListener(self.root)
         self.ipc_listener.start()
 
-    def show_name_message(self, text: str) -> None:
+    def show_message(self, text: str) -> None:
         self.name_label.config(text=text, image="", compound=tk.NONE)
 
         if self.msg_timeout_id is not None:
@@ -647,14 +647,14 @@ class Player:
         else:
             self.status.frame.pack_forget()
 
-        self.show_name_message(
+        self.show_message(
             "Status Bar Enabled" if args.show_status else "Status Bar Disabled"
         )
 
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
 
-        self.show_name_message(
+        self.show_message(
             "Sound FX Enabled" if args.sound_fx else "Sound FX Disabled"
         )
 
@@ -846,6 +846,8 @@ class Player:
                     input=self.current_url.encode("utf-8"),
                     check=True,
                 )
+
+                self.show_message("URL Copied")
             except Exception as e:
                 utils.print(f"Failed to copy to clipboard: {e}")
 

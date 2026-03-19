@@ -37,7 +37,7 @@ class Status:
             return
 
         if self.player.tuning:
-            self.player.show_name_message("Tuning...")
+            self.player.show_message("Tuning...")
             return
 
         if not hasattr(self.player, "players") or not hasattr(

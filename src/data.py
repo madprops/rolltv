@@ -37,7 +37,7 @@ class Data:
         self.width = 1200
         self.height = 800
         self.url_timeout = 3.0
-        self.info_restore_delay = 10 * 1000
+        self.info_restore_delay = 5 * 1000
         self.url_timeout = 3.0
         self.recent_urls = 20
         self.menu_icon_size = 20
