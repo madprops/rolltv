@@ -385,7 +385,7 @@ class Player:
         self.scrollbar = tk.Scrollbar(
             self.sidebar_listbox_frame,
             command=self.sidebar_listbox.yview,
-            bg=data.bg_color,
+            bg=data.scrollbar_color,
             bd=0,
             highlightthickness=0,
             relief=tk.FLAT,
@@ -1073,6 +1073,7 @@ class Player:
             if self.active_sidebar == "history"
             else self.country_filter_var
         )
+
         filter_text = active_var.get().lower()
 
         if filter_text == self.sidebar_filter_placeholder.lower():

@@ -40,6 +40,7 @@ class Data:
         self.url_timeout = 3.0
         self.recent_urls = 20
         self.menu_icon_size = 20
+        self.scrollbar_color = "#72a2b4"
 
 
 data = Data()

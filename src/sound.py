@@ -8,7 +8,16 @@ import platform
 class Sound:
     def create(self) -> None:
         self.tuning_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        self.tuning_wav.close()
         self.generate_tuning_sound(self.tuning_wav.name)
+
+        if platform.system() == "Linux":
+            try:
+                import mpv
+
+                self.player = mpv.MPV(vid="no", vo="null")
+            except Exception:
+                self.player = None
 
     def generate_tuning_sound(self, filename: str) -> None:
         duration = 0.2
@@ -53,13 +62,25 @@ class Sound:
             subprocess.Popen(["afplay", self.tuning_wav.name])
 
         if system == "Linux":
+            if getattr(self, "player", None) is not None:
+                self.player.play(self.tuning_wav.name)
+                return
+
             import subprocess
             import shutil
 
             if shutil.which("paplay"):
-                subprocess.Popen(["paplay", self.tuning_wav.name])
+                subprocess.Popen(
+                    ["paplay", self.tuning_wav.name],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
             else:
-                subprocess.Popen(["aplay", "-q", self.tuning_wav.name])
+                subprocess.Popen(
+                    ["aplay", "-q", self.tuning_wav.name],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
 
 
 sound = Sound()
