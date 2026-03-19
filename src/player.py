@@ -34,6 +34,7 @@ class Player:
         self.down_job: str | None = None
         self.up_release_job: str | None = None
         self.down_release_job: str | None = None
+        self.roll_anim_job: str | None = None
         self.is_up_pressed = False
         self.is_down_pressed = False
         self.sidebar_visible = False
@@ -857,16 +858,29 @@ class Player:
         if len(self.channels) == 0:
             return
 
+        self.animate_roll_button()
+
         if self.tuning:
             self.cancel_tuning()
-            return
 
         self.stall_retries = 0
         self.tuning = True
         self.is_roll = True
-        self.play_btn.config(state=tk.NORMAL, text="❌ Cancel")
+        self.search_id = getattr(self, "search_id", 0) + 1
         thread = threading.Thread(target=self.find_live_stream, daemon=True)
         thread.start()
+
+    def animate_roll_button(self) -> None:
+        if self.roll_anim_job is not None:
+            self.root.after_cancel(self.roll_anim_job)
+
+        self.play_btn.config(highlightbackground=data.fg_color)
+
+        def restore_style() -> None:
+            self.play_btn.config(highlightbackground=data.btn_border)
+            self.roll_anim_job = None
+
+        self.roll_anim_job = self.root.after(500, restore_style)
 
     def play_specific(self, channel: dict[str, Any]) -> None:
         if self.tuning:
@@ -886,12 +900,10 @@ class Player:
         self.stall_retries = 0
         self.tuning = True
         self.is_roll = False
-        self.play_btn.config(state=tk.NORMAL, text="❌ Cancel")
         self.prepare_switch(channel)
 
     def cancel_tuning(self) -> None:
         self.tuning = False
-        self.reset_button()
 
         if self.tuning_timeout is not None:
             self.root.after_cancel(self.tuning_timeout)
@@ -902,6 +914,7 @@ class Player:
         self.show_info_message("Tuning cancelled.")
 
     def find_live_stream(self) -> None:
+        my_search_id = getattr(self, "search_id", 0)
         working_channel = None
         attempts = 0
         sel_lang = self.selected_lang.get()
@@ -945,7 +958,7 @@ class Player:
             return
 
         while working_channel is None:
-            if not self.tuning:
+            if not self.tuning or my_search_id != getattr(self, "search_id", 0):
                 return
 
             if attempts > 30:
@@ -971,7 +984,7 @@ class Player:
                 )
 
                 with urllib.request.urlopen(req, timeout=3.0) as response:
-                    if not self.tuning:
+                    if not self.tuning or my_search_id != getattr(self, "search_id", 0):
                         return
 
                     if response.status in [200, 206, 301, 302]:
@@ -991,7 +1004,7 @@ class Player:
             except Exception:
                 continue
 
-        if not self.tuning:
+        if not self.tuning or (my_search_id != getattr(self, "search_id", 0)):
             return
 
         if working_channel is not None:
@@ -1009,6 +1022,9 @@ class Player:
 
         if self.active_idx == 0:
             next_idx = 1
+
+        if self.tuning_timeout is not None:
+            self.root.after_cancel(self.tuning_timeout)
 
         self.tuning_timeout = self.root.after(data.tuning_timeout, self.handle_timeout)
         self.players[next_idx].play(channel["url"])
@@ -1033,13 +1049,13 @@ class Player:
                 self.players[next_idx].stop()
 
                 if self.is_roll:
+                    self.search_id = getattr(self, "search_id", 0) + 1
                     thread = threading.Thread(target=self.find_live_stream, daemon=True)
                     thread.start()
                 elif self.pending_channel:
                     self.prepare_switch(self.pending_channel)
             else:
                 self.tuning = False
-                self.reset_button()
                 next_idx = 0
 
                 if self.active_idx == 0:
@@ -1085,7 +1101,6 @@ class Player:
             self.current_channel_name = self.pending_channel["name"]
 
         self.restore_channel_name()
-        self.play_btn.config(state=tk.NORMAL, text=data.roll_text)
 
         self.history = [
             ch for ch in self.history if ch["url"] != self.pending_channel["url"]
@@ -1103,7 +1118,6 @@ class Player:
 
     def reset_button(self) -> None:
         self.tuning = False
-        self.play_btn.config(state=tk.NORMAL, text=data.roll_text)
 
     def copy_link(self) -> None:
         if self.current_url != "":
