@@ -24,7 +24,9 @@ class Sidebar:
         self.player.menu_sidebar_frame.pack_propagate(False)
         self.main_menu_item("Toggle FX", self.player.toggle_sound_fx)
         self.main_menu_item("Toggle Status", self.player.toggle_status)
-        self.main_menu_item("Exit", self.player.exit_app)
+        exit_btn = self.main_menu_item("Exit", self.player.exit_app)
+        exit_btn.bind("<Enter>", lambda e: exit_btn.config(text="Exit (Bye!)"))
+        exit_btn.bind("<Leave>", lambda e: exit_btn.config(text="Exit"))
 
         self.player.sidebar_version_label = tk.Label(
             self.player.menu_sidebar_frame,
@@ -39,7 +41,7 @@ class Sidebar:
             side=tk.BOTTOM, fill=tk.X, padx=10, pady=10
         )
 
-    def main_menu_item(self, text: str, command: Any) -> None:
+    def main_menu_item(self, text: str, command: Any) -> tk.Button:
         btn = tk.Button(
             self.player.menu_sidebar_frame,
             text=text,
@@ -52,6 +54,7 @@ class Sidebar:
             relief=tk.FLAT,
             highlightbackground=data.btn_border,
             highlightthickness=0,
+            cursor="hand2",
             bd=0,
             padx=12,
             pady=4,
@@ -59,6 +62,7 @@ class Sidebar:
         )
 
         btn.pack(fill=tk.X, padx=10, pady=5)
+        return btn
 
     def create_main_sidebar(self) -> None:
         self.player.sidebar_frame = tk.Frame(
@@ -120,7 +124,6 @@ class Sidebar:
         )
 
         self.player.sidebar_listbox_frame.pack(fill=tk.BOTH, expand=True)
-
         style = ttk.Style()
 
         style.configure(
