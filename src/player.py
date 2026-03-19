@@ -161,19 +161,24 @@ class Player:
 
     def show_message(self, text: str) -> None:
         self.name_label.config(text=text, image="", compound=tk.NONE)
+        self.schedule_restore_channel_name(data.info_restore_delay)
 
+    def schedule_restore_channel_name(self, delay: int = 500) -> None:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
 
-        self.msg_timeout_id = self.root.after(
-            data.info_restore_delay, self.restore_channel_name
-        )
+        self.msg_timeout_id = self.root.after(delay, self.restore_channel_name)
 
     def restore_channel_name(self) -> None:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
 
         self.msg_timeout_id = None
+
+        if self.tuning:
+            self.name_label.config(text="Tuning...", image="", compound=tk.NONE)
+            return
+
         self.name_label.config(text=self.current_channel_name)
 
         if getattr(self, "current_flag_img", None):
@@ -827,7 +832,7 @@ class Player:
             self.play_btn.config(highlightbackground=data.btn_border)
             self.roll_anim_job = None
 
-        self.roll_anim_job = self.root.after(500, restore_style)
+        self.roll_anim_job = self.root.after(data.restore_name_delay, restore_style)
 
     def play_specific(self, channel: dict[str, Any], manual: bool = False) -> None:
         self.tuner.play_specific(channel, manual)

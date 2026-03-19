@@ -29,6 +29,7 @@ class Tuner:
         self.player.tuning = True
         self.player.is_roll = True
         self.player.search_id += 1
+        self.player.show_message("Tuning...")
 
         thread = threading.Thread(
             target=self.find_live_stream, args=(self.player.search_id,), daemon=True
@@ -57,6 +58,7 @@ class Tuner:
         self.player.tuning = True
         self.player.is_roll = False
         self.player.search_id += 1
+        self.player.show_message("Tuning...")
         self.prepare_switch(channel, self.player.search_id)
 
     def cancel_tuning(self, event: Any = None) -> None:
@@ -72,7 +74,7 @@ class Tuner:
         next_idx = 1 if self.player.active_idx == 0 else 0
         self.player.player_search_ids[next_idx] = -1
         self.player.players[next_idx].stop()
-        self.player.restore_channel_name()
+        self.player.schedule_restore_channel_name()
 
     def find_live_stream(self, my_search_id: int) -> None:
         working_channel = None

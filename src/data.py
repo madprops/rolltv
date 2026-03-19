@@ -42,6 +42,7 @@ class Data:
         self.recent_urls = 20
         self.menu_icon_size = 20
         self.scrollbar_color = "#72a2b4"
+        self.restore_name_delay = 500
 
 
 data = Data()
