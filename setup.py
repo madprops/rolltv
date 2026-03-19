@@ -22,7 +22,7 @@ def _create_desktop_file():
     content = f"""[Desktop Entry]
 Version=1.0
 Name={info.full_name}
-Exec={Path(f"~/.local/bin/{info.name}").expanduser().resolve()} --gui
+Exec={Path(f"~/.local/bin/{info.name}").expanduser().resolve()}
 Icon={Path(f"~/.local/share/icons/{info.name}.png").expanduser().resolve()}
 Terminal=false
 Type=Application
