@@ -7,13 +7,14 @@ import threading
 import subprocess
 import mpv
 import json
+from typing import Any
 
 from utils import utils
 from data import data
 
 
 class Player:
-    def __init__(self, root, channels):
+    def __init__(self, root: tk.Tk, channels: list[dict[str, Any]]) -> None:
         self.root = root
         self.channels = channels
         self.current_url = ""
@@ -200,21 +201,21 @@ class Player:
         self.frames[0].tkraise()
 
         @self.players[0].on_key_press("MBTN_LEFT_DBL")
-        def on_dbl_click_0():
+        def on_dbl_click_0() -> None:
             self.root.after(0, self.play_random)
 
         @self.players[1].on_key_press("MBTN_LEFT_DBL")
-        def on_dbl_click_1():
+        def on_dbl_click_1() -> None:
             self.root.after(0, self.play_random)
 
         @self.players[0].property_observer("playback-time")
-        def check_ready_0(name, value):
+        def check_ready_0(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 if self.tuning and self.active_idx != 0:
                     self.root.after(0, self.commit_switch, 0)
 
         @self.players[1].property_observer("playback-time")
-        def check_ready_1(name, value):
+        def check_ready_1(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 if self.tuning and self.active_idx != 1:
                     self.root.after(0, self.commit_switch, 1)
@@ -223,17 +224,17 @@ class Player:
             last_channel = self.history[-1]
             self.root.after(500, self.play_specific, last_channel)
 
-    def on_country_focus_in(self, event):
+    def on_country_focus_in(self, event: Any) -> None:
         if self.country_var.get() == self.placeholder_text:
             self.country_var.set("")
             self.country_entry.config(fg=data.fg_color)
 
-    def on_country_focus_out(self, event):
+    def on_country_focus_out(self, event: Any) -> None:
         if self.country_var.get().strip() == "":
             self.country_var.set(self.placeholder_text)
             self.country_entry.config(fg="gray")
 
-    def setup_languages(self):
+    def setup_languages(self) -> None:
         self.lang_map = {
             "eng": "English",
             "spa": "Spanish",
@@ -255,7 +256,7 @@ class Player:
         self.lang_map_rev = {v: k for k, v in self.lang_map.items()}
         self.display_languages = list(self.lang_map.values())
 
-    def load_history(self):
+    def load_history(self) -> list[dict[str, Any]]:
         config_dir = os.path.dirname(data.history_file)
 
         if not os.path.exists(config_dir):
@@ -276,7 +277,7 @@ class Player:
 
         return []
 
-    def save_history(self):
+    def save_history(self) -> None:
         config_dir = os.path.dirname(data.history_file)
 
         if not os.path.exists(config_dir):
@@ -288,7 +289,7 @@ class Player:
         except Exception as e:
             utils.print(f"Failed to save history: {e}")
 
-    def toggle_history(self):
+    def toggle_history(self) -> None:
         if self.sidebar_visible:
             self.sidebar_frame.pack_forget()
             self.history_btn.config(bg=data.btn_bg, relief=tk.FLAT)
@@ -303,13 +304,13 @@ class Player:
             self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
             self.sidebar_visible = True
 
-    def update_sidebar(self):
+    def update_sidebar(self) -> None:
         self.history_listbox.delete(0, tk.END)
 
         for ch in reversed(self.history):
             self.history_listbox.insert(tk.END, ch["name"])
 
-    def on_history_click(self, event):
+    def on_history_click(self, event: Any) -> str:
         index = self.history_listbox.nearest(event.y)
 
         if index >= 0:
@@ -323,7 +324,7 @@ class Player:
 
         return "break"
 
-    def play_random(self):
+    def play_random(self) -> None:
         if len(self.channels) == 0:
             return
 
@@ -336,7 +337,7 @@ class Player:
         thread = threading.Thread(target=self.find_live_stream, daemon=True)
         thread.start()
 
-    def play_specific(self, channel):
+    def play_specific(self, channel: dict[str, Any]) -> None:
         if self.tuning:
             return
 
@@ -348,7 +349,7 @@ class Player:
         self.play_btn.config(state=tk.DISABLED, text="⏳ Tuning")
         self.prepare_switch(channel)
 
-    def find_live_stream(self):
+    def find_live_stream(self) -> None:
         working_channel = None
         attempts = 0
         sel_lang = self.selected_lang.get()
@@ -421,7 +422,7 @@ class Player:
                 lambda: self.name_label.config(text="Could not find a working stream."),
             )
 
-    def prepare_switch(self, channel):
+    def prepare_switch(self, channel: dict[str, Any]) -> None:
         self.pending_channel = channel
         next_idx = 0
 
@@ -431,7 +432,7 @@ class Player:
         self.tuning_timeout = self.root.after(data.tuning_timeout, self.handle_timeout)
         self.players[next_idx].play(channel["url"])
 
-    def handle_timeout(self):
+    def handle_timeout(self) -> None:
         if self.tuning:
             if self.stall_retries < data.max_retries:
                 self.stall_retries += 1
@@ -462,7 +463,7 @@ class Player:
                     text=f"Stream stalled {data.max_retries} times. Roll again."
                 )
 
-    def commit_switch(self, ready_idx):
+    def commit_switch(self, ready_idx: int) -> None:
         if not self.tuning:
             return
 
@@ -499,11 +500,11 @@ class Player:
         if self.sidebar_visible:
             self.update_sidebar()
 
-    def reset_button(self):
+    def reset_button(self) -> None:
         self.tuning = False
         self.play_btn.config(state=tk.NORMAL, text=data.roll_text)
 
-    def copy_link(self):
+    def copy_link(self) -> None:
         if self.current_url != "":
             try:
                 subprocess.run(
@@ -514,7 +515,7 @@ class Player:
             except Exception as e:
                 utils.print(f"Failed to copy to clipboard: {e}")
 
-    def paste_link(self):
+    def paste_link(self) -> None:
         try:
             clip_text = self.root.clipboard_get().strip()
 
@@ -531,14 +532,14 @@ class Player:
         except tk.TclError:
             utils.print("Clipboard is empty or inaccessible.")
 
-    def volume_up(self, event):
+    def volume_up(self, event: Any) -> None:
         player = self.players[self.active_idx]
 
         if player:
             current_vol = player.volume
             player.volume = min(current_vol + 5, 100)
 
-    def volume_down(self, event):
+    def volume_down(self, event: Any) -> None:
         player = self.players[self.active_idx]
         utils.print(player)
 
@@ -546,7 +547,7 @@ class Player:
             current_vol = player.volume
             player.volume = max(current_vol - 5, 0)
 
-    def toggle_pause(self, event):
+    def toggle_pause(self, event: Any) -> None:
         player = self.players[self.active_idx]
 
         if player:

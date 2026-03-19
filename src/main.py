@@ -6,13 +6,14 @@ import time
 import tkinter as tk
 import urllib.request
 import json
+from typing import Any
 
 from utils import utils
 from data import data
 from player import Player
 
 
-def fetch_json(url, cache_file):
+def fetch_json(url: str, cache_file: str) -> Any:
     if os.path.exists(cache_file):
         file_age = time.time() - os.path.getmtime(cache_file)
 
@@ -35,7 +36,7 @@ def fetch_json(url, cache_file):
         return []
 
 
-def get_channels_data():
+def get_channels_data() -> list[dict[str, Any]]:
     channels_raw = fetch_json(data.channels_url, data.cache_channels)
     streams_raw = fetch_json(data.streams_url, data.cache_streams)
     feeds_raw = fetch_json(data.feeds_url, data.cache_feeds)
@@ -82,7 +83,7 @@ def get_channels_data():
     return merged
 
 
-def main():
+def main() -> None:
     channels = get_channels_data()
     if len(channels) == 0:
         utils.print("No channels found. Check your connection.")
