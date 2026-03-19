@@ -26,8 +26,8 @@ class Data:
         self.info_fg = "#888888"
         self.list_select_bg = "#33467C"
         self.btn_border = "#1F2335"
-        self.font_ui = ("sans-serif", 11)
-        self.name_font = ("sans-serif", 14, "bold")
+        self.font_ui = ("Roboto", 11)
+        self.name_font = ("Roboto", 14, "bold")
         self.status_font = ("Monospace", 12)
         self.roll_text = "Roll"
         self.any_language = "Language"

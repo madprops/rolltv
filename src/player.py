@@ -29,6 +29,7 @@ class Player:
         self.search_id = 0
         self.player_search_ids = {0: -1, 1: -1}
         self.menu_sidebar_visible = False
+        self.current_flag_img: tk.PhotoImage | None = None
         self.pending_channel: dict[str, Any] | None = None
         self.current_channel_name = f"{info.full_name} v{info.version}"
         self.current_country = "Unknown"
@@ -442,7 +443,7 @@ class Player:
         self.start_ipc_listener()
 
     def show_name_message(self, text: str) -> None:
-        self.name_label.config(text=text)
+        self.name_label.config(text=text, image="", compound=tk.NONE)
 
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
@@ -463,6 +464,8 @@ class Player:
 
         self.msg_timeout_id = None
         self.name_label.config(text=self.current_channel_name)
+        if getattr(self, "current_flag_img", None):
+            self.name_label.config(image=self.current_flag_img, compound=tk.RIGHT)
 
     def update_status_loop(self) -> None:
         self.update_status()
@@ -1293,7 +1296,15 @@ class Player:
         self.current_url = self.pending_channel["url"]
         c_name = self.pending_channel.get("country_name", "")
         self.current_country = c_name.title() if c_name else "Unknown"
-        self.current_channel_name = self.pending_channel["name"]
+        name = self.pending_channel.get("name", "Unknown")
+        self.current_channel_name = f"{name} "
+        c_code = self.pending_channel.get("country_code", "")
+
+        if isinstance(c_code, str) and len(c_code) == 2:
+            c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
+            threading.Thread(target=self.load_or_fetch_flag, args=(c_code, self.current_channel_name), daemon=True).start()
+        else:
+            self.clear_flag_image()
         self.restore_channel_name()
 
         self.history = [
@@ -1309,6 +1320,38 @@ class Player:
 
         if self.sidebar_visible:
             self.update_sidebar()
+
+    def load_or_fetch_flag(self, c_code: str, expected_name: str) -> None:
+        flag_dir = os.path.expanduser(f"~/.config/{info.name}/flags")
+        os.makedirs(flag_dir, exist_ok=True)
+        flag_path = os.path.join(flag_dir, f"{c_code}.png")
+
+        if not os.path.exists(flag_path):
+            try:
+                url = f"https://flagcdn.com/24x18/{c_code}.png"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=3) as response:
+                    if response.status == 200:
+                        with open(flag_path, "wb") as f:
+                            f.write(response.read())
+            except Exception:
+                self.root.after(0, self.clear_flag_image)
+                return
+
+        self.root.after(0, self.apply_flag_image, flag_path, expected_name)
+
+    def apply_flag_image(self, flag_path: str, expected_name: str) -> None:
+        if self.current_channel_name != expected_name:
+            return
+        try:
+            self.current_flag_img = tk.PhotoImage(file=flag_path)
+            self.name_label.config(image=self.current_flag_img, compound=tk.RIGHT)
+        except Exception:
+            self.clear_flag_image()
+
+    def clear_flag_image(self) -> None:
+        self.current_flag_img = None
+        self.name_label.config(image="", compound=tk.NONE)
 
     def reset_button(self) -> None:
         self.tuning = False
