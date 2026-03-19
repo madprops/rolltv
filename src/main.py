@@ -57,6 +57,9 @@ def get_channels_data() -> list[dict[str, Any]]:
     merged = []
 
     for st in streams_raw:
+        if st.get("status") not in ("online", None):
+            continue
+
         ch_id = st.get("channel")
         feed_id = st.get("feed")
 
