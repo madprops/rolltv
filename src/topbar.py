@@ -173,6 +173,24 @@ class Topbar:
 
         self.player.paste_btn.pack(side=tk.LEFT, padx=5)
 
+        self.player.world_btn = tk.Button(
+            self.player.btn_frame,
+            text="World",
+            command=self.player.toggle_globe,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg=data.fg_color,
+            activebackground=data.btn_active,
+            activeforeground=data.accent_color,
+            relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightthickness=1,
+            bd=0,
+            padx=12,
+            pady=4,
+        )
+        self.player.world_btn.pack(side=tk.LEFT, padx=5, before=self.player.country_frame)
+
         self.player.country_btn = tk.Button(
             self.player.btn_frame,
             text="Country",

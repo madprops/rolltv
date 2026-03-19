@@ -1,4 +1,5 @@
 import os
+import sys
 import mpv  # type: ignore
 import threading
 import subprocess
@@ -48,6 +49,8 @@ class Player:
         self.search_id = 0
         self.player_search_ids = {0: -1, 1: -1}
         self.menu_sidebar_visible = False
+        self.globe_visible = False
+        self.globe_process = None
         self.current_flag_img: tk.PhotoImage | None = None
         self.pending_channel: dict[str, Any] | None = None
         self.current_channel_name = f"{info.full_name} v{info.version}"
@@ -136,6 +139,7 @@ class Player:
         self.root.bind("<Return>", self.on_return_key)
         self.root.bind("<Key>", self.on_global_key_press)
         self.root.bind_all("<Button-1>", self.on_global_click, add="+")
+        self.root.bind("<Configure>", self.schedule_globe_update, add="+")
 
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
@@ -156,29 +160,24 @@ class Player:
         for player in self.players:
             self.register_player_bindings(player)
 
-        self.ipc_listener = IPCListener(self.root)
+        self.ipc_listener = IPCListener(self.root, self)
         self.ipc_listener.start()
 
     def show_message(self, text: str) -> None:
         self.name_label.config(text=text, image="", compound=tk.NONE)
-        self.schedule_restore_channel_name(data.info_restore_delay)
 
-    def schedule_restore_channel_name(self, delay: int = 500) -> None:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
 
-        self.msg_timeout_id = self.root.after(delay, self.restore_channel_name)
+        self.msg_timeout_id = self.root.after(
+            data.info_restore_delay, self.restore_channel_name
+        )
 
     def restore_channel_name(self) -> None:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
 
         self.msg_timeout_id = None
-
-        if self.tuning:
-            self.name_label.config(text="Tuning...", image="", compound=tk.NONE)
-            return
-
         self.name_label.config(text=self.current_channel_name)
 
         if getattr(self, "current_flag_img", None):
@@ -658,7 +657,10 @@ class Player:
 
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
-        self.show_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
+
+        self.show_message(
+            "Sound FX Enabled" if args.sound_fx else "Sound FX Disabled"
+        )
 
     def exit_app(self) -> None:
         self.root.destroy()
@@ -706,7 +708,7 @@ class Player:
                 if name_match or country_name_match:
                     self.sidebar_items.append(ch)
 
-                    if len(self.sidebar_items) >= data.max_country_items:
+                    if len(self.sidebar_items) >= 200:
                         break
 
         elif self.active_sidebar == "country":
@@ -832,7 +834,7 @@ class Player:
             self.play_btn.config(highlightbackground=data.btn_border)
             self.roll_anim_job = None
 
-        self.roll_anim_job = self.root.after(data.restore_name_delay, restore_style)
+        self.roll_anim_job = self.root.after(500, restore_style)
 
     def play_specific(self, channel: dict[str, Any], manual: bool = False) -> None:
         self.tuner.play_specific(channel, manual)
@@ -848,8 +850,6 @@ class Player:
                     input=self.current_url.encode("utf-8"),
                     check=True,
                 )
-
-                self.show_message("URL Copied")
             except Exception as e:
                 utils.print(f"Failed to copy to clipboard: {e}")
 
@@ -912,3 +912,82 @@ class Player:
                 player.pause = not player.pause
                 status = "Paused" if player.pause else "Playing"
                 player.show_text(status)
+
+    def toggle_globe(self) -> None:
+        if self.globe_visible:
+            self.hide_globe()
+        else:
+            self.show_globe()
+
+    def show_globe(self) -> None:
+        if self.globe_visible:
+            return
+
+        self.globe_visible = True
+        self.video_container.pack_forget()
+
+        self.globe_placeholder = tk.Frame(self.main_content_frame, bg=data.bg_color)
+        self.globe_placeholder.place(relx=0, rely=0, relwidth=1, relheight=0.7)
+        self.video_container.place(relx=0, rely=0.7, relwidth=1, relheight=0.3)
+
+        self.root.update_idletasks()
+        x = self.globe_placeholder.winfo_rootx()
+        y = self.globe_placeholder.winfo_rooty()
+        w = self.globe_placeholder.winfo_width()
+        h = self.globe_placeholder.winfo_height()
+
+        script_path = os.path.join(os.path.dirname(__file__), "globe.py")
+        cmd = [sys.executable, script_path, str(x), str(y), str(w), str(h), info.name]
+        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        self.check_globe_process()
+
+    def hide_globe(self) -> None:
+        if not self.globe_visible:
+            return
+
+        self.globe_visible = False
+        if self.globe_process:
+            try:
+                self.globe_process.terminate()
+            except Exception:
+                pass
+            self.globe_process = None
+
+        if hasattr(self, 'globe_placeholder'):
+            self.globe_placeholder.destroy()
+
+        self.video_container.place_forget()
+        self.video_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    def set_country_from_globe(self, country_name: str) -> None:
+        self.country_var.set(country_name)
+        self.country_entry.config(fg=data.fg_color)
+        self.on_country_var_change()
+        self.hide_globe()
+        self.play_random()
+
+    def schedule_globe_update(self, event: Any = None) -> None:
+        if self.globe_visible:
+            if hasattr(self, '_globe_update_job') and self._globe_update_job:
+                self.root.after_cancel(self._globe_update_job)
+            self._globe_update_job = self.root.after(10, self.update_globe_position)
+
+    def update_globe_position(self) -> None:
+        self._globe_update_job = None
+        if self.globe_visible and self.globe_process and self.globe_process.stdin:
+            x = self.globe_placeholder.winfo_rootx()
+            y = self.globe_placeholder.winfo_rooty()
+            w = self.globe_placeholder.winfo_width()
+            h = self.globe_placeholder.winfo_height()
+            try:
+                self.globe_process.stdin.write(f"{x},{y},{w},{h}\n".encode("utf-8"))
+                self.globe_process.stdin.flush()
+            except Exception:
+                pass
+
+    def check_globe_process(self) -> None:
+        if self.globe_visible and self.globe_process:
+            if self.globe_process.poll() is not None:
+                self.hide_globe()
+            else:
+                self.root.after(500, self.check_globe_process)

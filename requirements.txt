@@ -1,2 +1,5 @@
 python-mpv
-emoji
+pywebview
+qtpy
+PyQt6
+PyQt6-WebEngine

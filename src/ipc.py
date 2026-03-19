@@ -9,8 +9,9 @@ from info import info
 
 
 class IPCListener:
-    def __init__(self, root: Any) -> None:
+    def __init__(self, root: Any, player: Any = None) -> None:
         self.root = root
+        self.player = player
 
     def start(self) -> None:
         def listener() -> None:
@@ -51,6 +52,10 @@ class IPCListener:
                     if req_data == "RAISE":
                         # Safely trigger the Tkinter event from the background thread
                         self.root.after(0, self.raise_window)
+                    elif req_data.startswith("COUNTRY:"):
+                        if self.player:
+                            country_name = req_data.split(":", 1)[1]
+                            self.root.after(0, self.player.set_country_from_globe, country_name)
 
                     conn.close()
                 except Exception:
