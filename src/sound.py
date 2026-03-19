@@ -13,7 +13,7 @@ class Sound:
 
         if platform.system() == "Linux":
             try:
-                import mpv
+                import mpv  # type: ignore
 
                 self.player = mpv.MPV(vid="no", vo="null")
             except Exception:
