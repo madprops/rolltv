@@ -56,9 +56,9 @@ class Player:
                 utils.print(f"Could not load icon: {e}")
 
         self.top_frame = tk.Frame(root, bg=data.bg_color)
-        self.top_frame.pack(fill=tk.X, pady=10, padx=15)
+        self.top_frame.pack(fill=tk.X, pady=10)
         self.info_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.info_frame.pack(side=tk.LEFT)
+        self.info_frame.pack(side=tk.LEFT, padx=(15, 0))
 
         self.name_label = tk.Label(
             self.info_frame,
@@ -70,19 +70,19 @@ class Player:
 
         self.name_label.pack(anchor=tk.W)
         self.btn_frame = tk.Frame(self.top_frame, bg=data.bg_color)
-        self.btn_frame.pack(side=tk.RIGHT)
-        self.stats_frame = tk.Frame(root, bg=data.bg_color)
-        self.stats_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+        self.btn_frame.pack(side=tk.RIGHT, padx=(0, 15))
+        self.stats_frame = tk.Frame(root, bg=data.btn_bg)
+        self.stats_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.stats_label = tk.Label(
             self.stats_frame,
             text="",
             font=("Monospace", 12),
-            bg=data.bg_color,
+            bg=data.btn_bg,
             fg=data.info_fg,
         )
 
-        self.stats_label.pack(anchor=tk.W)
+        self.stats_label.pack(anchor=tk.W, padx=15, pady=2)
         self.saved_data = self.load_data()
         country_val = self.saved_data.get("country", self.country_placeholder)
         self.country_var = tk.StringVar(value=country_val)
@@ -456,10 +456,10 @@ class Player:
                 self.sidebar_frame.pack_forget()
         else:
             self.top_frame.pack(
-                fill=tk.X, pady=10, padx=15, before=self.main_content_frame
+                    fill=tk.X, pady=10, before=self.main_content_frame
             )
             self.stats_frame.pack(
-                fill=tk.X, padx=15, pady=(0, 10), before=self.main_content_frame
+                    fill=tk.X, pady=(0, 10), before=self.main_content_frame
             )
 
             if self.sidebar_visible:
