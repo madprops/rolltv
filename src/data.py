@@ -1,6 +1,7 @@
 import os
 from info import info
 
+
 class Data:
     def __init__(self) -> None:
         self.channels_url = "https://iptv-org.github.io/api/channels.json"

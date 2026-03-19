@@ -35,6 +35,7 @@ def fetch_json(url, cache_file):
         utils.print(f"Failed to fetch {url}: {e}")
         return []
 
+
 def get_channels_data():
     channels_raw = fetch_json(data.channels_url, data.cache_channels)
     streams_raw = fetch_json(data.streams_url, data.cache_streams)
@@ -69,8 +70,18 @@ def get_channels_data():
 
                 c_code = ch_info.get("country") or ""
                 c_name = country_dict.get(c_code.lower()) or ""
-                merged.append({"name": ch_info.get("name", "Unknown"), "url": st.get("url", ""), "languages": langs, "country_code": c_code, "country_name": c_name})
+
+                merged.append(
+                    {
+                        "name": ch_info.get("name", "Unknown"),
+                        "url": st.get("url", ""),
+                        "languages": langs,
+                        "country_code": c_code,
+                        "country_name": c_name,
+                    }
+                )
     return merged
+
 
 def main():
     channels = get_channels_data()

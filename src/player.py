@@ -13,6 +13,7 @@ import json
 from utils import utils
 from data import data
 
+
 class Player:
     def __init__(self, root, channels):
         self.root = root
@@ -157,7 +158,11 @@ class Player:
         self.video_container.bind("<Button-4>", self.volume_up)
         self.video_container.bind("<Button-5>", self.volume_down)
         self.video_container.bind("<Button-3>", self.toggle_pause)
-        self.sidebar_frame = tk.Frame(self.main_content_frame, bg=data.btn_bg, width=300)
+
+        self.sidebar_frame = tk.Frame(
+            self.main_content_frame, bg=data.btn_bg, width=300
+        )
+
         self.sidebar_frame.pack_propagate(False)
 
         self.history_listbox = tk.Listbox(
@@ -169,12 +174,19 @@ class Player:
             highlightthickness=0,
             selectbackground=data.btn_bg,
             selectforeground=data.fg_color,
-            activestyle="none"
+            activestyle="none",
         )
-        self.scrollbar = tk.Scrollbar(self.sidebar_frame, command=self.history_listbox.yview, bg=data.bg_color)
+
+        self.scrollbar = tk.Scrollbar(
+            self.sidebar_frame, command=self.history_listbox.yview, bg=data.bg_color
+        )
+
         self.history_listbox.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.history_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.history_listbox.pack(
+            side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10
+        )
+
         self.history_listbox.bind("<Button-1>", self.on_history_click)
         self.frames = []
         self.players = []
@@ -285,7 +297,11 @@ class Player:
             self.sidebar_visible = False
         else:
             self.update_sidebar()
-            self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, before=self.video_container)
+
+            self.sidebar_frame.pack(
+                side=tk.RIGHT, fill=tk.Y, before=self.video_container
+            )
+
             self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
             self.sidebar_visible = True
 
@@ -368,7 +384,11 @@ class Player:
 
         if len(valid_channels) == 0:
             self.root.after(0, self.reset_button)
-            self.root.after(0, lambda: self.name_label.config(text="No channels for this filter"))
+
+            self.root.after(
+                0, lambda: self.name_label.config(text="No channels for this filter")
+            )
+
             return
 
         while working_channel is None:
@@ -397,7 +417,11 @@ class Player:
             self.root.after(0, self.prepare_switch, working_channel)
         else:
             self.root.after(0, self.reset_button)
-            self.root.after(0, lambda: self.name_label.config(text="Could not find a working stream."))
+
+            self.root.after(
+                0,
+                lambda: self.name_label.config(text="Could not find a working stream."),
+            )
 
     def prepare_switch(self, channel):
         self.pending_channel = channel
@@ -413,7 +437,11 @@ class Player:
         if self.tuning:
             if self.stall_retries < data.max_retries:
                 self.stall_retries += 1
-                self.name_label.config(text=f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})")
+
+                self.name_label.config(
+                    text=f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
+                )
+
                 next_idx = 0
 
                 if self.active_idx == 0:
@@ -431,7 +459,10 @@ class Player:
                     next_idx = 1
 
                 self.players[next_idx].stop()
-                self.name_label.config(text=f"Stream stalled {data.max_retries} times. Roll again.")
+
+                self.name_label.config(
+                    text=f"Stream stalled {data.max_retries} times. Roll again."
+                )
 
     def commit_switch(self, ready_idx):
         if not self.tuning:
@@ -455,7 +486,11 @@ class Player:
         self.current_url = self.pending_channel["url"]
         self.name_label.config(text=self.pending_channel["name"])
         self.play_btn.config(state=tk.NORMAL, text=data.roll_text)
-        self.history = [ch for ch in self.history if ch["url"] != self.pending_channel["url"]]
+
+        self.history = [
+            ch for ch in self.history if ch["url"] != self.pending_channel["url"]
+        ]
+
         self.history.append(self.pending_channel)
 
         if len(self.history) > data.max_history:
