@@ -51,10 +51,7 @@ def stdin_listener(window):
     except Exception:
         pass
 
-    try:
-        window.destroy()
-    except Exception:
-        pass
+    os._exit(0)
 
 
 html = """
@@ -75,11 +72,9 @@ html = """
         }
     </style>
     <script>
-        const originalWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && args[0].includes('THREE.Clock')) return;
-            originalWarn.apply(console, args);
-        };
+        console.warn = function() {};
+        console.log = function() {};
+        console.info = function() {};
     </script>
     <script src="https://unpkg.com/globe.gl"></script>
 </head>
