@@ -139,6 +139,7 @@ class Player:
         self.root.bind("<Return>", self.on_return_key)
         self.root.bind("<Key>", self.on_global_key_press)
         self.root.bind_all("<Button-1>", self.on_global_click, add="+")
+        self.root.protocol("WM_DELETE_WINDOW", self.exit_app)
 
         @self.players[0].property_observer("playback-time")  # type: ignore
         def check_ready_0(name: str, value: Any) -> None:
@@ -660,6 +661,7 @@ class Player:
         self.show_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
 
     def exit_app(self) -> None:
+        self.hide_globe()
         self.root.destroy()
 
     def update_sidebar(self, *args: Any, immediate: bool = False) -> None:
@@ -926,7 +928,7 @@ class Player:
 
         script_path = os.path.join(os.path.dirname(__file__), "globe.py")
         cmd = [sys.executable, script_path, info.name]
-        self.globe_process = subprocess.Popen(cmd)
+        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         self.check_globe_process()
 
     def hide_globe(self) -> None:
@@ -937,7 +939,10 @@ class Player:
 
         if self.globe_process:
             try:
-                self.globe_process.terminate()
+                if self.globe_process.stdin:
+                    self.globe_process.stdin.close()
+                else:
+                    self.globe_process.terminate()
             except Exception:
                 pass
             self.globe_process = None

@@ -51,6 +51,11 @@ def stdin_listener(window):
     except Exception:
         pass
 
+    try:
+        window.destroy()
+    except Exception:
+        pass
+
 
 html = """
 <!DOCTYPE html>
