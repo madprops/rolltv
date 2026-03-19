@@ -83,6 +83,7 @@ class Tuner:
 
         if sel_lang != data.any_language:
             target_code = self.player.lang_map_rev.get(sel_lang, sel_lang)
+
             valid_channels = [
                 ch
                 for ch in valid_channels
