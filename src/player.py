@@ -393,7 +393,11 @@ class Player:
             w = getattr(player, "width", None)
             h = getattr(player, "height", None)
             res = f"{w}x{h}" if w and h else "Unknown Res"
-            fps = getattr(player, "container_fps", getattr(player, "estimated_vf_fps", None))
+
+            fps = getattr(
+                player, "container_fps", getattr(player, "estimated_vf_fps", None)
+            )
+
             fps_str = f"{fps:.0f} fps" if fps else "Unknown fps"
             v_br = getattr(player, "video_bitrate", None) or 0
             a_br = getattr(player, "audio_bitrate", None) or 0
@@ -429,7 +433,7 @@ class Player:
 
             if isinstance(audio_params, dict) and "samplerate" in audio_params:
                 sr = audio_params["samplerate"]
-                ac += f" ({sr/1000:.1f}kHz)"
+                ac += f" ({sr / 1000:.1f}kHz)"
 
             codecs = f"{vc} / {ac}"
             cache = getattr(player, "demuxer_cache_duration", None)
