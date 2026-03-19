@@ -1,13 +1,10 @@
 import os
-import json
 import mpv  # type: ignore
-import random
 import threading
 import subprocess
 import tkinter as tk
-import urllib.request
 from tkinter import ttk
-from typing import Any, cast
+from typing import Any
 
 from utils import utils
 from data import data
@@ -18,6 +15,9 @@ from sidebar import Sidebar
 from topbar import Topbar
 from store import store
 from ipc import IPCListener
+from flags import Flags
+from status import Status
+from tuner import Tuner
 
 
 class Player:
@@ -80,19 +80,10 @@ class Player:
         self.setup_languages()
         lang_val = self.saved_data.get("language", data.any_language)
         self.selected_lang = tk.StringVar(value=lang_val)
+        self.flags = Flags(self)
+        self.tuner = Tuner(self)
         Topbar(self)
-        self.status_frame = tk.Frame(root, bg=data.btn_bg)
-        self.status_frame.pack(side=tk.BOTTOM, fill=tk.X)
-
-        self.status_label = tk.Label(
-            self.status_frame,
-            text="",
-            font=data.status_font,
-            bg=data.btn_bg,
-            fg=data.info_fg,
-        )
-
-        self.status_label.pack(anchor=tk.W, padx=20, pady=4)
+        self.status = Status(self)
         self.main_content_frame = tk.Frame(root, bg=data.bg_color)
         self.main_content_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -147,13 +138,13 @@ class Player:
         def check_ready_0(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 current_id = self.player_search_ids[0]
-                self.root.after(0, self.commit_switch_if_valid, 0, current_id)
+                self.root.after(0, self.tuner.commit_switch_if_valid, 0, current_id)
 
         @self.players[1].property_observer("playback-time")  # type: ignore
         def check_ready_1(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 current_id = self.player_search_ids[1]
-                self.root.after(0, self.commit_switch_if_valid, 1, current_id)
+                self.root.after(0, self.tuner.commit_switch_if_valid, 1, current_id)
 
         if len(self.history) > 0:
             last_channel = self.history[-1]
@@ -162,7 +153,6 @@ class Player:
         for player in self.players:
             self.register_player_bindings(player)
 
-        self.update_status_loop()
         self.ipc_listener = IPCListener(self.root)
         self.ipc_listener.start()
 
@@ -176,12 +166,6 @@ class Player:
             data.info_restore_delay, self.restore_channel_name
         )
 
-    def set_status(self, text: str) -> None:
-        if not args.show_status:
-            return
-
-        self.status_label.config(text=text)
-
     def restore_channel_name(self) -> None:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
@@ -191,79 +175,6 @@ class Player:
 
         if getattr(self, "current_flag_img", None):
             self.name_label.config(image=self.current_flag_img, compound=tk.RIGHT)  # type: ignore
-
-    def update_status_loop(self) -> None:
-        self.update_status()
-        self.root.after(1000, self.update_status_loop)
-
-    def update_status(self) -> None:
-        if not args.show_status:
-            return
-
-        if self.tuning:
-            self.show_name_message("Tuning...")
-            return
-
-        player = self.players[self.active_idx]
-
-        if player and getattr(player, "playback_time", None) is not None:
-            w = getattr(player, "width", None)
-            h = getattr(player, "height", None)
-            res = f"{w}x{h}" if w and h else "Unknown Res"
-
-            fps = getattr(
-                player, "container_fps", getattr(player, "estimated_vf_fps", None)
-            )
-
-            fps_str = f"{fps:.0f} fps" if fps else "Unknown fps"
-            v_br = getattr(player, "video_bitrate", None) or 0
-            a_br = getattr(player, "audio_bitrate", None) or 0
-            tb = v_br + a_br
-
-            def fmt_br(b: float) -> str:
-                if b >= 1000000:
-                    return f"{b / 1000000:.1f}M"
-                elif b > 0:
-                    return f"{b / 1000:.0f}K"
-                return "0"
-
-            if tb > 0:
-                br_str = f"{fmt_br(tb)}bps (V:{fmt_br(v_br)} A:{fmt_br(a_br)})"
-            else:
-                br_str = "Unknown bitrate"
-
-            vc = (
-                getattr(player, "video_format", getattr(player, "video_codec", None))
-                or "No Video"
-            )
-
-            ac = (
-                getattr(
-                    player, "audio_codec_name", getattr(player, "audio_codec", None)
-                )
-                or "No Audio"
-            )
-
-            vc = vc.upper() if isinstance(vc, str) else vc
-            ac = ac.upper() if isinstance(ac, str) else ac
-            audio_params = getattr(player, "audio_params", None)
-
-            if isinstance(audio_params, dict) and "samplerate" in audio_params:
-                sr = audio_params["samplerate"]
-                ac += f" ({sr / 1000:.1f}kHz)"
-
-            codecs = f"{vc} / {ac}"
-            cache = getattr(player, "demuxer_cache_duration", None)
-            cache_str = f"Buf: {cache:.1f}s" if cache is not None else "Buf: 0.0s"
-            d_drops = getattr(player, "drop_frame_count", None) or 0
-            vo_drops = getattr(player, "vo_drop_frame_count", None) or 0
-            drops_str = f"Drops: {d_drops + vo_drops}"
-            hwdec = getattr(player, "hwdec_current", None)
-            hw_str = f"HW: {hwdec.upper()}" if hwdec and hwdec != "no" else "SW"
-            status = f"{self.current_country} | {res} | {fps_str} | {br_str} | {codecs} | {hw_str} | {cache_str} | {drops_str}"
-            self.set_status(status)
-        else:
-            self.set_status("")
 
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
@@ -308,7 +219,7 @@ class Player:
             self.top_frame.pack_forget()
 
             if args.show_status:
-                self.status_frame.pack_forget()
+                self.status.frame.pack_forget()
 
             if self.active_sidebar:
                 self.sidebar_frame.pack_forget()
@@ -318,7 +229,7 @@ class Player:
             self.top_frame.pack(fill=tk.X, pady=10, before=self.main_content_frame)
 
             if args.show_status:
-                self.status_frame.pack(
+                self.status.frame.pack(
                     side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
                 )
 
@@ -611,72 +522,13 @@ class Player:
         self.lang_map_rev = {v: k for k, v in self.lang_map.items()}
         self.display_languages = list(self.lang_map.values())
 
-    def load_data(self) -> dict[str, str]:
-        config_dir = os.path.dirname(data.data_file)
-
-        if not os.path.exists(config_dir):
-            os.makedirs(config_dir)
-
-        if os.path.exists(data.data_file):
-            try:
-                with open(data.data_file, "r", encoding="utf-8") as f:
-                    return cast(dict[str, str], json.load(f))
-            except Exception as e:
-                utils.print(f"Failed to load data: {e}")
-
-        return {}
-
     def save_data(self) -> None:
-        config_dir = os.path.dirname(data.data_file)
-
-        if not os.path.exists(config_dir):
-            os.makedirs(config_dir)
-
-        try:
-            with open(data.data_file, "w", encoding="utf-8") as f:
-                json.dump(
-                    {
-                        "country": self.country_var.get(),
-                        "language": self.selected_lang.get(),
-                    },
-                    f,
-                    indent=4,
-                )
-        except Exception as e:
-            utils.print(f"Failed to save data: {e}")
-
-    def load_history(self) -> list[dict[str, Any]]:
-        config_dir = os.path.dirname(data.history_file)
-
-        if not os.path.exists(config_dir):
-            os.makedirs(config_dir)
-
-        if not os.path.exists(data.history_file):
-            try:
-                with open(data.history_file, "w", encoding="utf-8") as f:
-                    json.dump([], f)
-            except Exception as e:
-                utils.print(f"Failed to create history file: {e}")
-
-        try:
-            with open(data.history_file, "r", encoding="utf-8") as f:
-                return cast(list[dict[str, Any]], json.load(f))
-        except Exception as e:
-            utils.print(f"Failed to load history: {e}")
-
-        return []
-
-    def save_history(self) -> None:
-        config_dir = os.path.dirname(data.history_file)
-
-        if not os.path.exists(config_dir):
-            os.makedirs(config_dir)
-
-        try:
-            with open(data.history_file, "w", encoding="utf-8") as f:
-                json.dump(self.history, f, indent=4)
-        except Exception as e:
-            utils.print(f"Failed to save history: {e}")
+        store.save_data(
+            {
+                "country": self.country_var.get(),
+                "language": self.selected_lang.get(),
+            }
+        )
 
     def toggle_sidebar(self, sidebar_type: str) -> None:
         if self.active_sidebar == sidebar_type:
@@ -749,11 +601,11 @@ class Player:
 
         if args.show_status:
             if not self.is_fullscreen:
-                self.status_frame.pack(
+                self.status.frame.pack(
                     side=tk.BOTTOM, fill=tk.X, after=self.main_content_frame
                 )
         else:
-            self.status_frame.pack_forget()
+            self.status.frame.pack_forget()
 
         self.show_name_message(
             "Status Bar Enabled" if args.show_status else "Status Bar Disabled"
@@ -780,9 +632,6 @@ class Player:
 
         self.sidebar_listbox.delete(*self.sidebar_listbox.get_children())
         self.sidebar_items = []
-
-        if not hasattr(self, "flag_images"):
-            self.flag_images: dict[str, tk.PhotoImage] = {}
 
         active_var = (
             self.history_filter_var
@@ -835,21 +684,18 @@ class Player:
 
             if isinstance(c_code, str) and len(c_code) == 2:
                 c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
-
-                flag_path = os.path.expanduser(
-                    f"~/.config/{info.name}/flags/{c_code}.png"
-                )
+                flag_path = self.flags.get_path(c_code)
 
                 if os.path.exists(flag_path):
-                    if c_code not in self.flag_images:
+                    if c_code not in self.flags.flag_images:
                         try:
-                            self.flag_images[c_code] = tk.PhotoImage(file=flag_path)
+                            self.flags.flag_images[c_code] = tk.PhotoImage(file=flag_path)
                         except Exception:
                             pass
-                    img = self.flag_images.get(c_code)
+                    img = self.flags.flag_images.get(c_code)
                 else:
                     threading.Thread(
-                        target=self.fetch_flag_only, args=(c_code,), daemon=True
+                        target=self.flags.fetch_only, args=(c_code,), daemon=True
                     ).start()
 
             if img:
@@ -907,27 +753,7 @@ class Player:
         return "break"
 
     def play_random(self) -> None:
-        if len(self.channels) == 0:
-            return
-
-        if args.sound_fx:
-            sound.play_tuning_sound()
-
-        self.animate_roll_button()
-
-        if self.tuning:
-            self.cancel_tuning()
-
-        self.stall_retries = 0
-        self.tuning = True
-        self.is_roll = True
-        self.search_id += 1
-
-        thread = threading.Thread(
-            target=self.find_live_stream, args=(self.search_id,), daemon=True
-        )
-
-        thread.start()
+        self.tuner.play_random()
 
     def animate_roll_button(self) -> None:
         if self.roll_anim_job is not None:
@@ -942,339 +768,10 @@ class Player:
         self.roll_anim_job = self.root.after(500, restore_style)
 
     def play_specific(self, channel: dict[str, Any], manual: bool = False) -> None:
-        if manual and args.sound_fx:
-            sound.play_tuning_sound()
-
-        if self.tuning:
-            self.cancel_tuning()
-
-        if channel["url"] == self.current_url:
-            return
-
-        for db_ch in self.channels:
-            if db_ch["url"] == channel["url"]:
-                for key, value in db_ch.items():
-                    if key not in channel or not channel[key]:
-                        channel[key] = value
-
-                break
-
-        self.stall_retries = 0
-        self.tuning = True
-        self.is_roll = False
-        self.search_id += 1
-        self.prepare_switch(channel, self.search_id)
+        self.tuner.play_specific(channel, manual)
 
     def cancel_tuning(self, event: Any = None) -> None:
-        if not self.tuning:
-            return
-
-        self.tuning = False
-
-        if self.tuning_timeout is not None:
-            self.root.after_cancel(self.tuning_timeout)
-            self.tuning_timeout = None
-
-        next_idx = 1 if self.active_idx == 0 else 0
-        self.player_search_ids[next_idx] = -1
-        self.players[next_idx].stop()
-        self.restore_channel_name()
-
-    def find_live_stream(self, my_search_id: int) -> None:
-        working_channel = None
-        sel_lang = self.selected_lang.get()
-        valid_channels = self.channels
-
-        if sel_lang != data.any_language:
-            target_code = self.lang_map_rev.get(sel_lang, sel_lang)
-
-            valid_channels = [
-                ch
-                for ch in valid_channels
-                if target_code in (ch.get("languages") or [])
-            ]
-
-        target_country = self.country_var.get().strip().lower()
-
-        if (target_country != "") and (
-            target_country != self.country_placeholder.lower()
-        ):
-            valid_channels = [
-                ch
-                for ch in valid_channels
-                if target_country == (ch.get("country_code") or "").lower()
-                or target_country in (ch.get("country_name") or "").lower()
-            ]
-
-        recent_urls = {ch["url"] for ch in self.history[-data.recent_urls :]}
-        fresh_channels = [ch for ch in valid_channels if ch["url"] not in recent_urls]
-
-        if len(fresh_channels) > 0:
-            valid_channels = fresh_channels
-
-        if len(valid_channels) == 0:
-            self.root.after(0, self.reset_button)
-
-            self.root.after(
-                0, lambda: self.show_name_message("No channels for this filter")
-            )
-
-            return
-
-        candidates = random.sample(valid_channels, min(30, len(valid_channels)))
-
-        for candidate in candidates:
-            if not self.tuning or my_search_id != self.search_id:
-                return
-
-            if (
-                self.is_roll
-                and self.pending_channel
-                and (candidate["url"] == self.pending_channel["url"])
-                and (len(valid_channels) > 1)
-            ):
-                continue
-
-            try:
-                req = urllib.request.Request(
-                    candidate["url"],
-                    method="GET",
-                    headers={"User-Agent": "mpv/0.34.0"},
-                )
-
-                with urllib.request.urlopen(req, timeout=data.url_timeout) as response:
-                    if not self.tuning or (my_search_id != self.search_id):
-                        return
-
-                    if response.status in [200, 206, 301, 302]:
-                        chunk = response.read(2048)
-
-                        if len(chunk) > 0:
-                            text_chunk = chunk.decode("utf-8", errors="ignore")
-
-                            if "#EXTM3U" in text_chunk:
-                                if (
-                                    "#EXTINF" not in text_chunk
-                                    and "#EXT-X" not in text_chunk
-                                ):
-                                    continue
-
-                            working_channel = candidate
-                            break
-            except Exception:
-                continue
-
-        if not self.tuning or my_search_id != self.search_id:
-            return
-
-        if working_channel is not None:
-            self.root.after(0, self.prepare_switch, working_channel, my_search_id)
-        else:
-            self.root.after(0, self.reset_button)
-
-            self.root.after(
-                0, lambda: self.show_name_message("Could not find a working stream.")
-            )
-
-    def prepare_switch(self, channel: dict[str, Any], search_id: int) -> None:
-        if not self.tuning or search_id != self.search_id:
-            return
-
-        self.pending_channel = channel
-        next_idx = 0
-
-        if self.active_idx == 0:
-            next_idx = 1
-
-        if self.tuning_timeout is not None:
-            self.root.after_cancel(self.tuning_timeout)
-
-        self.tuning_timeout = self.root.after(
-            data.tuning_timeout, lambda: self.handle_timeout(search_id)
-        )
-
-        self.player_search_ids[next_idx] = search_id
-        self.players[next_idx].mute = True
-        self.players[next_idx].play(channel["url"])
-
-    def handle_timeout(self, search_id: int) -> None:
-        if not self.tuning or (search_id != self.search_id):
-            return
-
-        if self.is_roll or self.stall_retries < data.max_retries:
-            if self.is_roll:
-                self.stall_retries = 0
-                self.show_name_message("Stalled. Trying a different stream...")
-            else:
-                self.stall_retries += 1
-
-                self.show_name_message(
-                    f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
-                )
-
-            next_idx = 0
-
-            if self.active_idx == 0:
-                next_idx = 1
-
-            self.player_search_ids[next_idx] = -1
-            self.players[next_idx].stop()
-
-            self.search_id += 1
-            new_search_id = self.search_id
-
-            if self.is_roll:
-                thread = threading.Thread(
-                    target=self.find_live_stream, args=(new_search_id,), daemon=True
-                )
-
-                thread.start()
-            elif self.pending_channel:
-                self.prepare_switch(self.pending_channel, new_search_id)
-        else:
-            self.tuning = False
-            next_idx = 0
-
-            if self.active_idx == 0:
-                next_idx = 1
-
-            self.player_search_ids[next_idx] = -1
-            self.players[next_idx].stop()
-
-            self.show_name_message(
-                f"Stream stalled {data.max_retries} times. Roll again."
-            )
-
-    def commit_switch_if_valid(self, ready_idx: int, search_id: int) -> None:
-        if not self.tuning or search_id != self.search_id:
-            return
-        if self.active_idx == ready_idx:
-            return
-
-        self.commit_switch(ready_idx)
-
-    def commit_switch(self, ready_idx: int) -> None:
-        if not self.tuning:
-            return
-
-        self.tuning = False
-        self.stall_retries = 0
-
-        if self.tuning_timeout is not None:
-            self.root.after_cancel(self.tuning_timeout)
-            self.tuning_timeout = None
-
-        self.active_idx = ready_idx
-        self.frames[ready_idx].tkraise()
-        self.players[ready_idx].mute = False
-        old_idx = 0
-
-        if ready_idx == 0:
-            old_idx = 1
-
-        self.player_search_ids[old_idx] = -1
-        self.players[old_idx].stop()
-
-        if self.pending_channel is None:
-            return
-
-        self.current_url = self.pending_channel["url"]
-        c_name = self.pending_channel.get("country_name", "")
-        self.current_country = c_name.title() if c_name else "Unknown"
-        name = self.pending_channel.get("name", "Unknown")
-        self.current_channel_name = f"{name}   "
-        c_code = self.pending_channel.get("country_code", "")
-
-        if isinstance(c_code, str) and len(c_code) == 2:
-            c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
-
-            threading.Thread(
-                target=self.load_or_fetch_flag,
-                args=(c_code, self.current_channel_name),
-                daemon=True,
-            ).start()
-        else:
-            self.clear_flag_image()
-        self.restore_channel_name()
-
-        self.history = [
-            ch for ch in self.history if ch["url"] != self.pending_channel["url"]
-        ]
-
-        self.history.append(self.pending_channel)
-
-        if len(self.history) > data.max_history:
-            self.history.pop(0)
-
-        store.save_history(self.history)
-
-        if self.active_sidebar:
-            self.update_sidebar()
-
-    def load_or_fetch_flag(self, c_code: str, expected_name: str) -> None:
-        flag_dir = os.path.expanduser(f"~/.config/{info.name}/flags")
-        os.makedirs(flag_dir, exist_ok=True)
-        flag_path = os.path.join(flag_dir, f"{c_code}.png")
-
-        if not os.path.exists(flag_path):
-            try:
-                url = f"https://flagcdn.com/24x18/{c_code}.png"
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-
-                with urllib.request.urlopen(req, timeout=3) as response:
-                    if response.status == 200:
-                        with open(flag_path, "wb") as f:
-                            f.write(response.read())
-            except Exception:
-                self.root.after(0, self.clear_flag_image)
-                return
-
-        self.root.after(0, self.apply_flag_image, flag_path, expected_name)
-
-    def apply_flag_image(self, flag_path: str, expected_name: str) -> None:
-        if self.current_channel_name != expected_name:
-            return
-        try:
-            self.current_flag_img = tk.PhotoImage(file=flag_path)
-            self.name_label.config(image=self.current_flag_img, compound=tk.RIGHT)
-        except Exception:
-            self.clear_flag_image()
-
-    def clear_flag_image(self) -> None:
-        self.current_flag_img = None
-        self.name_label.config(image="", compound=tk.NONE)
-
-    def fetch_flag_only(self, c_code: str) -> None:
-        flag_dir = os.path.expanduser(f"~/.config/{info.name}/flags")
-        os.makedirs(flag_dir, exist_ok=True)
-        flag_path = os.path.join(flag_dir, f"{c_code}.png")
-
-        if not os.path.exists(flag_path):
-            try:
-                url = f"https://flagcdn.com/24x18/{c_code}.png"
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-
-                with urllib.request.urlopen(req, timeout=3) as response:
-                    if response.status == 200:
-                        with open(flag_path, "wb") as f:
-                            f.write(response.read())
-
-                        def update_images() -> None:
-                            try:
-                                if not hasattr(self, "flag_images"):
-                                    self.flag_images = {}
-                                self.flag_images[c_code] = tk.PhotoImage(file=flag_path)
-                            except Exception:
-                                return
-                            if self.active_sidebar:
-                                self.update_sidebar()
-
-                        self.root.after(0, update_images)
-            except Exception:
-                pass
-
-    def reset_button(self) -> None:
-        self.tuning = False
+        self.tuner.cancel_tuning(event)
 
     def copy_link(self) -> None:
         if self.current_url != "":
