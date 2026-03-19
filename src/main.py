@@ -40,7 +40,7 @@ def fetch_json(url: str, cache_file: str) -> Any:
         return []
 
 
-def get_channels_data() -> list[dict[str, Any]]:
+def get_channels_data() -> Any:
     if os.path.exists(data.cache_merged):
         file_age = time.time() - os.path.getmtime(data.cache_merged)
 
