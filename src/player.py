@@ -469,37 +469,37 @@ class Player:
 
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore
-        def _on_dbl_click() -> None:
+        def on_dbl_click() -> None:
             self.root.after(0, self.toggle_maximize)
 
         @player.on_key_press("WHEEL_UP")  # type: ignore
         @player.on_key_press("AXIS_UP")  # type: ignore
-        def _on_wheel_up() -> None:
+        def on_wheel_up() -> None:
             self.root.after(0, self.volume_up)
 
         @player.on_key_press("WHEEL_DOWN")  # type: ignore
         @player.on_key_press("AXIS_DOWN")  # type: ignore
-        def _on_wheel_down() -> None:
+        def on_wheel_down() -> None:
             self.root.after(0, self.volume_down)
 
         @player.on_key_press("MBTN_RIGHT")  # type: ignore
-        def _on_right_click() -> None:
+        def on_right_click() -> None:
             self.root.after(0, self.toggle_pause)
 
         @player.on_key_press("UP")  # type: ignore
-        def _on_up() -> None:
+        def on_up() -> None:
             self.root.after(0, self.move_up)
 
         @player.on_key_press("DOWN")  # type: ignore
-        def _on_down() -> None:
+        def on_down() -> None:
             self.root.after(0, self.move_down)
 
         @player.on_key_press("ENTER")  # type: ignore
-        def _on_enter() -> None:
+        def on_enter() -> None:
             self.root.after(0, lambda: self.on_return_key(None))
 
         @player.on_key_press("ESC")  # type: ignore
-        def _on_esc() -> None:
+        def on_esc() -> None:
             self.root.after(0, lambda: self.handle_escape(None))
 
     def toggle_maximize(self, event: Any = None) -> None:
