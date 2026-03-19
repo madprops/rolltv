@@ -5,6 +5,7 @@ import tempfile
 import hashlib
 import os
 import threading
+import logging
 
 
 class Api:
@@ -49,6 +50,14 @@ html = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style> body { margin: 0; padding: 0; background-color: #1A1B26; overflow: hidden; } </style>
+    <script>
+        // Suppress harmless THREE.js deprecation warnings in the terminal
+        const origWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('THREE.Clock')) return;
+            origWarn.apply(console, args);
+        };
+    </script>
     <script src="https://unpkg.com/globe.gl"></script>
 </head>
 <body>
@@ -110,10 +119,11 @@ if __name__ == '__main__':
         x=x,
         y=y,
         frameless=True,
-        easy_drag=False,
-        on_top=True,
         background_color='#1A1B26'
     )
+
+    # Suppress pywebview's internal backend fallback warnings (e.g. GTK not found)
+    logging.getLogger('pywebview').setLevel(logging.CRITICAL)
 
     threading.Thread(target=stdin_listener, args=(window,), daemon=True).start()
     webview.start()
