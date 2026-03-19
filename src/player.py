@@ -526,7 +526,9 @@ class Player:
 
         target_country = self.country_var.get().strip().lower()
 
-        if (target_country != "") and (target_country != self.country_placeholder.lower()):
+        if (target_country != "") and (
+            target_country != self.country_placeholder.lower()
+        ):
             filtered_by_country = []
 
             for ch in valid_channels:
