@@ -29,6 +29,7 @@ class Player:
         self.player_search_ids = {0: -1, 1: -1}
         self.pending_channel: dict[str, Any] | None = None
         self.current_channel_name = f"{info.full_name} v{info.version}"
+        self.current_country = "Unknown"
         self.tuning_timeout: str | None = None
         self.msg_timeout_id: str | None = None
         self.history = self.load_history()
@@ -83,7 +84,7 @@ class Player:
             self.status_label = tk.Label(
                 self.status_frame,
                 text="",
-                font=("Monospace", 10),
+                font=data.status_font,
                 bg=data.btn_bg,
                 fg=data.info_fg,
             )
@@ -461,7 +462,7 @@ class Player:
             drops_str = f"Drops: {d_drops + vo_drops}"
             hwdec = getattr(player, "hwdec_current", None)
             hw_str = f"HW: {hwdec.upper()}" if hwdec and hwdec != "no" else "SW"
-            status = f"{res} | {fps_str} | {br_str} | {codecs} | {hw_str} | {cache_str} | {drops_str}"
+            status = f"{self.current_country} | {res} | {fps_str} | {br_str} | {codecs} | {hw_str} | {cache_str} | {drops_str}"
             self.set_status(status)
         else:
             self.set_status("")
@@ -1181,14 +1182,8 @@ class Player:
 
         self.current_url = self.pending_channel["url"]
         c_name = self.pending_channel.get("country_name", "")
-
-        if c_name:
-            self.current_channel_name = (
-                f"{self.pending_channel['name']} ({c_name.title()})"
-            )
-        else:
-            self.current_channel_name = self.pending_channel["name"]
-
+        self.current_country = c_name.title() if c_name else "Unknown"
+        self.current_channel_name = self.pending_channel["name"]
         self.restore_channel_name()
 
         self.history = [
