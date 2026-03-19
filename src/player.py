@@ -17,6 +17,7 @@ from utils import utils
 from data import data
 from info import info
 from args import args
+from sound import sound
 
 
 class Player:
@@ -1177,7 +1178,7 @@ class Player:
         if len(self.channels) == 0:
             return
 
-        self.play_tuning_sound()
+        sound.play_tuning_sound()
         self.animate_roll_button()
 
         if self.tuning:
@@ -1208,7 +1209,7 @@ class Player:
 
     def play_specific(self, channel: dict[str, Any], manual: bool = False) -> None:
         if manual:
-            self.play_tuning_sound()
+            sound.play_tuning_sound()
 
         if self.tuning:
             self.cancel_tuning()
@@ -1663,19 +1664,3 @@ class Player:
         self.root.attributes("-topmost", False)
         self.root.lift()
         self.root.focus_force()
-
-    def play_tuning_sound(self) -> None:
-        def run() -> None:
-            try:
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                sound_path = os.path.join(script_dir, "tuning.mp3")
-                if os.path.exists(sound_path):
-                    p = mpv.MPV(video="no")
-                    p.volume = self.current_volume
-                    p.play(sound_path)
-                    p.wait_for_playback()
-                    p.terminate()
-            except Exception as e:
-                utils.print(f"Failed to play tuning sound: {e}")
-
-        threading.Thread(target=run, daemon=True).start()

@@ -12,6 +12,7 @@ from typing import Any
 from info import info
 from data import data
 from utils import utils
+from sound import sound
 from player import Player
 
 LOCKS = []
@@ -180,6 +181,7 @@ def main() -> None:
     utils.set_proc_name(info.name)
     root = tk.Tk(className=info.name)
     Player(root, channels)
+    sound.create()
     root.mainloop()
 
 
