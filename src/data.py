@@ -31,6 +31,7 @@ class Data:
         self.max_retries = 10
         self.width = 1200
         self.height = 800
+        self.url_timeout = 3.0
 
 
 data = Data()

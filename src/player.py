@@ -37,6 +37,7 @@ class Player:
         self.is_down_pressed = False
         self.sidebar_visible = False
         self.stall_retries = 0
+        self.is_random_roll = False
         self.country_placeholder = "Country"
         self.root.title(data.title)
         self.root.geometry(f"{data.width}x{data.height}")
@@ -298,6 +299,8 @@ class Player:
                 wid=str(frame.winfo_id()),
                 hwdec="auto",
                 input_vo_keyboard=True,
+                profile="low-latency",
+                cache_pause=False,
             )
 
             self.frames.append(frame)
@@ -839,6 +842,7 @@ class Player:
             return
 
         self.stall_retries = 0
+        self.is_random_roll = True
         self.tuning = True
         self.play_btn.config(state=tk.NORMAL, text="❌ Cancel")
         thread = threading.Thread(target=self.find_live_stream, daemon=True)
@@ -860,6 +864,7 @@ class Player:
                 break
 
         self.stall_retries = 0
+        self.is_random_roll = False
         self.tuning = True
         self.play_btn.config(state=tk.NORMAL, text="❌ Cancel")
         self.prepare_switch(channel)
@@ -934,7 +939,7 @@ class Player:
                     headers={"User-Agent": "mpv/0.34.0"},
                 )
 
-                with urllib.request.urlopen(req, timeout=3.0) as response:
+                with urllib.request.urlopen(req, timeout=data.url_timeout) as response:
                     if not self.tuning:
                         return
 
@@ -979,34 +984,35 @@ class Player:
 
     def handle_timeout(self) -> None:
         if self.tuning:
-            if self.stall_retries < data.max_retries:
-                self.stall_retries += 1
+            next_idx = 0
 
-                self.show_info_message(
-                    f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
-                )
+            if self.active_idx == 0:
+                next_idx = 1
 
-                next_idx = 0
-
-                if self.active_idx == 0:
-                    next_idx = 1
-
+            if self.is_random_roll:
+                self.show_info_message("Stream stalled. Finding another...")
                 self.players[next_idx].stop()
                 thread = threading.Thread(target=self.find_live_stream, daemon=True)
                 thread.start()
             else:
-                self.tuning = False
-                self.reset_button()
-                next_idx = 0
+                if self.stall_retries < data.max_retries:
+                    self.stall_retries += 1
 
-                if self.active_idx == 0:
-                    next_idx = 1
+                    self.show_info_message(
+                        f"Stalled. Retrying... ({self.stall_retries}/{data.max_retries})"
+                    )
 
-                self.players[next_idx].stop()
+                    self.players[next_idx].stop()
+                    if self.pending_channel is not None:
+                        self.prepare_switch(self.pending_channel)
+                else:
+                    self.tuning = False
+                    self.reset_button()
+                    self.players[next_idx].stop()
 
-                self.show_info_message(
-                    f"Stream stalled {data.max_retries} times. Roll again."
-                )
+                    self.show_info_message(
+                        f"Stream stalled {data.max_retries} times. Try another."
+                    )
 
     def commit_switch(self, ready_idx: int) -> None:
         if not self.tuning:
