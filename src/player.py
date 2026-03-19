@@ -528,9 +528,13 @@ class Player:
             return
 
         count = sum(
-            1 for ch in self.channels
+            1
+            for ch in self.channels
             if target_country == (ch.get("country_code") or "").lower()
-            or (len(target_country) > 2 and target_country in (ch.get("country_name") or "").lower())
+            or (
+                len(target_country) > 2
+                and target_country in (ch.get("country_name") or "").lower()
+            )
         )
 
         self.country_btn.config(text=f"Country ({count})" if count > 0 else "Country")
@@ -719,7 +723,9 @@ class Player:
                     c_code = (ch.get("country_code") or "").lower()
                     c_name = (ch.get("country_name") or "").lower()
 
-                    if target_country != c_code and not (len(target_country) > 2 and target_country in c_name):
+                    if target_country != c_code and not (
+                        len(target_country) > 2 and target_country in c_name
+                    ):
                         country_match = False
 
                 if country_match:
