@@ -25,7 +25,7 @@ class Data:
         self.font_ui = ("Monospace", 12, "bold")
         self.roll_text = "🎲 Roll"
         self.any_language = "Language"
-        self.max_history = 100
+        self.max_history = 1000
         self.max_retries = 10
         self.width = 1200
         self.height = 800

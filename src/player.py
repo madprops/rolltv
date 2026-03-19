@@ -25,6 +25,7 @@ class Player:
         self.tuning_timeout: str | None = None
         self.msg_timeout_id: str | None = None
         self.history = self.load_history()
+        self.filtered_history: list[dict[str, Any]] = []
         self.sidebar_visible = False
         self.stall_retries = 0
         self.country_placeholder = "Country"
@@ -212,6 +213,27 @@ class Player:
 
         self.sidebar_frame.pack_propagate(False)
 
+        self.history_filter_placeholder = "Filter"
+        self.history_filter_var = tk.StringVar(value=self.history_filter_placeholder)
+        self.history_filter_var.trace_add("write", self.update_sidebar)
+
+        self.history_filter_entry = tk.Entry(
+            self.sidebar_frame,
+            textvariable=self.history_filter_var,
+            font=data.font_ui,
+            bg=data.btn_bg,
+            fg="gray",
+            insertbackground=data.fg_color,
+            relief=tk.FLAT,
+            highlightbackground=data.btn_border,
+            highlightcolor=data.btn_border,
+            highlightthickness=1,
+            bd=0,
+        )
+        self.history_filter_entry.pack(fill=tk.X, padx=10, pady=(10, 0))
+        self.history_filter_entry.bind("<FocusIn>", self.on_history_filter_focus_in)
+        self.history_filter_entry.bind("<FocusOut>", self.on_history_filter_focus_out)
+
         self.history_listbox = tk.Listbox(
             self.sidebar_frame,
             bg=data.btn_bg,
@@ -346,6 +368,16 @@ class Player:
             self.country_entry.config(fg="gray")
         self.save_data()
 
+    def on_history_filter_focus_in(self, event: Any) -> None:
+        if self.history_filter_var.get() == self.history_filter_placeholder:
+            self.history_filter_var.set("")
+            self.history_filter_entry.config(fg=data.fg_color)
+
+    def on_history_filter_focus_out(self, event: Any) -> None:
+        if self.history_filter_var.get().strip() == "":
+            self.history_filter_var.set(self.history_filter_placeholder)
+            self.history_filter_entry.config(fg="gray")
+
     def on_country_return(self, event: Any) -> str:
         self.root.focus_set()
         self.save_data()
@@ -461,11 +493,18 @@ class Player:
             self.history_btn.config(bg=data.btn_active, relief=tk.SUNKEN)
             self.sidebar_visible = True
 
-    def update_sidebar(self) -> None:
+    def update_sidebar(self, *args: Any) -> None:
         self.history_listbox.delete(0, tk.END)
+        self.filtered_history = []
+        filter_text = self.history_filter_var.get().lower()
+
+        if filter_text == self.history_filter_placeholder.lower():
+            filter_text = ""
 
         for ch in reversed(self.history):
-            self.history_listbox.insert(tk.END, ch["name"])
+            if filter_text in ch["name"].lower():
+                self.filtered_history.append(ch)
+                self.history_listbox.insert(tk.END, ch["name"])
 
     def on_history_click(self, event: Any) -> str:
         index = self.history_listbox.nearest(event.y)  # type: ignore
@@ -475,9 +514,9 @@ class Player:
 
             if bbox:
                 if bbox[1] <= event.y <= bbox[1] + bbox[3]:
-                    real_index = len(self.history) - 1 - index
-                    ch = self.history[real_index]
-                    self.root.after(0, self.play_specific, ch)
+                    if index < len(self.filtered_history):
+                        ch = self.filtered_history[index]
+                        self.root.after(0, self.play_specific, ch)
 
         return "break"
 
@@ -486,25 +525,36 @@ class Player:
             return
 
         if self.tuning:
+            self.cancel_tuning()
             return
 
         self.stall_retries = 0
         self.tuning = True
-        self.play_btn.config(state=tk.DISABLED, text="⏳ Tuning")
+        self.play_btn.config(state=tk.NORMAL, text="❌ Cancel")
         thread = threading.Thread(target=self.find_live_stream, daemon=True)
         thread.start()
 
     def play_specific(self, channel: dict[str, Any]) -> None:
         if self.tuning:
-            return
+            self.cancel_tuning()
 
         if channel["url"] == self.current_url:
             return
 
         self.stall_retries = 0
         self.tuning = True
-        self.play_btn.config(state=tk.DISABLED, text="⏳ Tuning")
+        self.play_btn.config(state=tk.NORMAL, text="❌ Cancel")
         self.prepare_switch(channel)
+
+    def cancel_tuning(self) -> None:
+        self.tuning = False
+        self.reset_button()
+        if self.tuning_timeout is not None:
+            self.root.after_cancel(self.tuning_timeout)
+            self.tuning_timeout = None
+        next_idx = 1 if self.active_idx == 0 else 0
+        self.players[next_idx].stop()
+        self.show_info_message("Tuning cancelled.")
 
     def find_live_stream(self) -> None:
         working_channel = None
@@ -550,6 +600,9 @@ class Player:
             return
 
         while working_channel is None:
+            if not self.tuning:
+                return
+
             if attempts > 30:
                 break
 
@@ -564,12 +617,18 @@ class Player:
                 )
 
                 with urllib.request.urlopen(req, timeout=3.0) as response:
+                    if not self.tuning:
+                        return
+
                     if response.status in [200, 206, 301, 302]:
                         chunk = response.read(16)
                         if len(chunk) > 0:
                             working_channel = candidate
             except Exception:
                 continue
+
+        if not self.tuning:
+            return
 
         if working_channel is not None:
             self.root.after(0, self.prepare_switch, working_channel)
