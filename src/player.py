@@ -342,7 +342,9 @@ class Player:
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
 
-        self.msg_timeout_id = self.root.after(data.info_restore_delay, self.restore_channel_name)
+        self.msg_timeout_id = self.root.after(
+            data.info_restore_delay, self.restore_channel_name
+        )
 
     def show_status_message(self, text: str) -> None:
         self.stats_label.config(text=text)
