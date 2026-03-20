@@ -94,19 +94,30 @@ html = """
     <script>
         let activeCountryCode = null;
         let countriesData = null;
+        let activeCountryName = "";
+        let currentHover = null;
 
         window.setCountry = function(code) {
             activeCountryCode = code ? code.toUpperCase() : null;
+            activeCountryName = "";
             if (window.worldInstance) {
                 window.worldInstance.polygonCapColor(d => isMatch(d) ? "lightgreen" : "#33467C");
 
                 if (activeCountryCode && countriesData) {
                     const matched = countriesData.find(isMatch);
-                    if (matched && typeof d3 !== 'undefined') {
-                        const centroid = d3.geoCentroid(matched);
-                        const currentPov = window.worldInstance.pointOfView();
-                        window.worldInstance.pointOfView({ lat: centroid[1], lng: centroid[0], altitude: currentPov.altitude }, 1000);
+                    if (matched) {
+                        activeCountryName = matched.properties.ADMIN;
+                        if (typeof d3 !== 'undefined') {
+                            const centroid = d3.geoCentroid(matched);
+                            const currentPov = window.worldInstance.pointOfView();
+                            window.worldInstance.pointOfView({ lat: centroid[1], lng: centroid[0], altitude: currentPov.altitude }, 1000);
+                        }
                     }
+                }
+
+                if (!currentHover) {
+                    const tooltip = document.getElementById("hover-tooltip");
+                    tooltip.innerText = activeCountryName;
                 }
             }
         };
@@ -135,9 +146,10 @@ html = """
                     .polygonStrokeColor(() => "#7AA2F7")
 
                     .onPolygonHover(hoverD => {
+                        currentHover = hoverD;
                         world.polygonCapColor(d => isMatch(d) ? "lightgreen" : (d === hoverD ? "#7AA2F7" : "#33467C"));
                         const tooltip = document.getElementById("hover-tooltip");
-                        tooltip.innerText = hoverD ? hoverD.properties.ADMIN : "";
+                        tooltip.innerText = hoverD ? hoverD.properties.ADMIN : activeCountryName;
                     })
 
                     .onPolygonClick(clickedPoly => {
@@ -150,7 +162,6 @@ html = """
 
                 world.controls().autoRotate = false;
                 world.controls().autoRotateSpeed = 1.0;
-
                 window.worldInstance = world;
 
                 window.addEventListener("resize", (event) => {

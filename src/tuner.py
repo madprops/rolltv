@@ -29,7 +29,7 @@ class Tuner:
         self.player.tuning = True
         self.player.is_roll = True
         self.player.search_id += 1
-        self.player.show_message("Tuning...")
+        self.player.show_message("Tuning...", auto_restore=False)
 
         thread = threading.Thread(
             target=self.find_live_stream, args=(self.player.search_id,), daemon=True
@@ -58,7 +58,7 @@ class Tuner:
         self.player.tuning = True
         self.player.is_roll = False
         self.player.search_id += 1
-        self.player.show_message("Tuning...")
+        self.player.show_message("Tuning...", auto_restore=False)
         self.prepare_switch(channel, self.player.search_id)
 
     def cancel_tuning(self, event: Any = None) -> None:
@@ -173,12 +173,27 @@ class Tuner:
                 0, self.prepare_switch, working_channel, my_search_id
             )
         else:
-            self.player.root.after(0, self.reset_button)
+            if self.player.is_roll and self.player.stall_retries < data.max_retries:
+                def retry_find() -> None:
+                    if not self.player.tuning or my_search_id != self.player.search_id:
+                        return
 
-            self.player.root.after(
-                0,
-                lambda: self.player.show_message("Could not find a working stream."),
-            )
+                    self.player.stall_retries += 1
+                    self.player.search_id += 1
+                    new_search_id = self.player.search_id
+
+                    threading.Thread(
+                        target=self.find_live_stream, args=(new_search_id,), daemon=True
+                    ).start()
+
+                self.player.root.after(0, retry_find)
+            else:
+                self.player.root.after(0, self.reset_button)
+
+                self.player.root.after(
+                    0,
+                    lambda: self.player.show_message("Could not find a working stream."),
+                )
 
     def prepare_switch(self, channel: dict[str, Any], search_id: int) -> None:
         if not self.player.tuning or search_id != self.player.search_id:
@@ -224,6 +239,7 @@ class Tuner:
             next_idx = 1 if self.player.active_idx == 0 else 0
             self.player.player_search_ids[next_idx] = -1
             self.player.players[next_idx].stop()
+
             self.player.show_message(
                 f"Stream stalled {data.max_retries} times. Roll again."
             )
@@ -288,11 +304,13 @@ class Tuner:
             self.player.flags.clear()
 
         self.player.restore_channel_name()
+
         self.player.history = [
             ch
             for ch in self.player.history
             if ch["url"] != self.player.pending_channel["url"]
         ]
+
         self.player.history.append(self.player.pending_channel)
 
         if len(self.player.history) > data.max_history_items:

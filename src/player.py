@@ -72,6 +72,7 @@ class Player:
         self.down_release_job: str | None = None
         self.roll_anim_job: str | None = None
         self.sidebar_update_job: str | None = None
+        self.stall_timeout_id: str | None = None
         self.is_up_pressed = False
         self.is_down_pressed = False
         self.active_sidebar: str | None = None
@@ -158,6 +159,16 @@ class Player:
                 current_id = self.player_search_ids[1]
                 self.root.after(0, self.tuner.commit_switch_if_valid, 1, current_id)
 
+        @self.players[0].property_observer("core-idle")  # type: ignore
+        def check_idle_0(name: str, value: Any) -> None:
+            if value is not None:
+                self.root.after(0, self.handle_idle_change, 0, value)
+
+        @self.players[1].property_observer("core-idle")  # type: ignore
+        def check_idle_1(name: str, value: Any) -> None:
+            if value is not None:
+                self.root.after(0, self.handle_idle_change, 1, value)
+
         if len(self.history) > 0:
             last_channel = self.history[-1]
             self.root.after(500, self.play_specific, last_channel)
@@ -206,15 +217,17 @@ class Player:
             utils.print(f"Capture failed: {e}")
             self.show_message("Capture failed")
 
-    def show_message(self, text: str) -> None:
+    def show_message(self, text: str, auto_restore: bool = True) -> None:
         self.name_label.config(text=text, image="", compound=tk.NONE)
 
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
+            self.msg_timeout_id = None
 
-        self.msg_timeout_id = self.root.after(
-            data.info_restore_delay, self.restore_channel_name
-        )
+        if auto_restore:
+            self.msg_timeout_id = self.root.after(
+                data.info_restore_delay, self.restore_channel_name
+            )
 
     def restore_channel_name(self) -> None:
         if self.msg_timeout_id is not None:
@@ -962,6 +975,41 @@ class Player:
                 player.pause = not player.pause
                 status = "Paused" if player.pause else "Playing"
                 player.show_text(status)
+
+                if not player.pause:
+                    is_idle = getattr(player, "core_idle", False)
+                    self.handle_idle_change(self.active_idx, is_idle)
+                else:
+                    if getattr(self, "stall_timeout_id", None) is not None:
+                        self.root.after_cancel(self.stall_timeout_id)
+                        self.stall_timeout_id = None
+
+    def handle_idle_change(self, idx: int, is_idle: bool) -> None:
+        if self.active_idx != idx or self.tuning:
+            return
+
+        player = self.players[idx]
+
+        if is_idle and not getattr(player, "pause", False):
+            if getattr(self, "stall_timeout_id", None) is None:
+                self.stall_timeout_id = self.root.after(
+                    data.tuning_timeout, self.reconnect_stream
+                )
+        else:
+            if getattr(self, "stall_timeout_id", None) is not None:
+                self.root.after_cancel(self.stall_timeout_id)
+                self.stall_timeout_id = None
+
+    def reconnect_stream(self) -> None:
+        self.stall_timeout_id = None
+
+        if self.tuning or not self.pending_channel:
+            return
+
+        if self.is_roll:
+            self.play_random()
+        else:
+            self.play_specific(self.pending_channel)
 
     def toggle_globe(self) -> None:
         if self.globe_visible:
