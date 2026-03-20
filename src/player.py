@@ -180,7 +180,7 @@ class Player:
             current_time = 0
 
         start_time = max(0, current_time - duration)
-        end_time = current_time + 10  # Additional forward padding guarantees we catch up to now
+        end_time = current_time
         capture_dir = os.path.expanduser(f"~/.config/{info.name}/captures")
         os.makedirs(capture_dir, exist_ok=True)
         now = datetime.datetime.now()
