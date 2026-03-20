@@ -9,7 +9,9 @@ class Status:
     def __init__(self, player: Any) -> None:
         self.player = player
         self.frame = tk.Frame(player.root, bg=data.btn_bg)
-        self.frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        if args.show_status:
+            self.frame.pack(side=tk.BOTTOM, fill=tk.X)
 
         self.label = tk.Label(
             self.frame,
