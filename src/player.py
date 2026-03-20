@@ -182,13 +182,16 @@ class Player:
 
         start_time = max(0, current_time - duration)
         end_time = current_time
-        capture_dir = os.path.expanduser(f"~/.config/{info.name}/captures")
+        captures_dir = args.captures or f"~/.config/{info.name}/captures"
+        capture_dir = os.path.expanduser(captures_dir)
         os.makedirs(capture_dir, exist_ok=True)
         now = datetime.datetime.now()
         filename = now.strftime("%d_%m_%Y") + f"_{int(time.time())}.mp4"
         filepath = os.path.join(capture_dir, filename)
 
         try:
+            utils.print(f"Saving to: {filepath}")
+
             player.command(
                 "dump-cache", f"{start_time:.3f}", f"{end_time:.3f}", filepath
             )
