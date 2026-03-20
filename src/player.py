@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+import datetime
 import mpv  # type: ignore
 import threading
 import subprocess
@@ -121,6 +123,9 @@ class Player:
                 wid=str(frame.winfo_id()),
                 hwdec="auto",
                 input_vo_keyboard=True,
+                demuxer_max_bytes=134217728,
+                demuxer_max_back_bytes=536870912,
+                cache="yes",
             )
 
             player.volume = self.current_volume
@@ -162,6 +167,32 @@ class Player:
 
         self.ipc_listener = IPCListener(self.root, self)
         self.ipc_listener.start()
+
+    def save_capture(self, duration: int) -> None:
+        player = self.players[self.active_idx]
+
+        if not player or getattr(player, "playback_time", None) is None:
+            self.show_message("No active stream")
+            return
+
+        current_time = getattr(player, "playback_time", 0)
+        if current_time is None:
+            current_time = 0
+
+        start_time = max(0, current_time - duration)
+        end_time = current_time + 10  # Additional forward padding guarantees we catch up to now
+        capture_dir = os.path.expanduser(f"~/.config/{info.name}/captures")
+        os.makedirs(capture_dir, exist_ok=True)
+        now = datetime.datetime.now()
+        filename = now.strftime("%d_%m_%Y") + f"_{int(time.time())}.mp4"
+        filepath = os.path.join(capture_dir, filename)
+
+        try:
+            player.command("dump-cache", f"{start_time:.3f}", f"{end_time:.3f}", filepath)
+            self.show_message(f"Saved {duration}s capture")
+        except Exception as e:
+            utils.print(f"Capture failed: {e}")
+            self.show_message("Capture failed")
 
     def show_message(self, text: str) -> None:
         self.name_label.config(text=text, image="", compound=tk.NONE)
