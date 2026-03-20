@@ -293,7 +293,7 @@ class Player:
             if self.menu_sidebar_visible:
                 self.menu_sidebar_frame.pack_forget()
         else:
-            self.top_frame.pack(fill=tk.X, pady=10, after=self.main_content_frame)
+            self.top_frame.pack(fill=tk.X, pady=10, before=self.main_content_frame)
 
             if args.show_status:
                 self.status.frame.pack(
