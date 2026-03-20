@@ -84,6 +84,7 @@ html = """
     </script>
 
     <script src="https://unpkg.com/globe.gl"></script>
+    <script src="https://unpkg.com/d3"></script>
 </head>
 
 <body>
@@ -92,11 +93,21 @@ html = """
 
     <script>
         let activeCountryCode = null;
+        let countriesData = null;
 
         window.setCountry = function(code) {
             activeCountryCode = code ? code.toUpperCase() : null;
             if (window.worldInstance) {
                 window.worldInstance.polygonCapColor(d => isMatch(d) ? "lightgreen" : "#33467C");
+
+                if (activeCountryCode && countriesData) {
+                    const matched = countriesData.find(isMatch);
+                    if (matched && typeof d3 !== 'undefined') {
+                        const centroid = d3.geoCentroid(matched);
+                        const currentPov = window.worldInstance.pointOfView();
+                        window.worldInstance.pointOfView({ lat: centroid[1], lng: centroid[0], altitude: currentPov.altitude }, 1000);
+                    }
+                }
             }
         };
 
@@ -110,6 +121,7 @@ html = """
         fetch("https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson")
             .then(res => res.json())
             .then(countries => {
+                countriesData = countries.features;
                 const world = Globe()
                     (document.getElementById("globeViz"))
                     .backgroundColor("#1A1B26")

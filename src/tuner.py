@@ -278,6 +278,7 @@ class Tuner:
 
         if isinstance(c_code, str) and len(c_code) == 2:
             c_code = "gb" if c_code.lower() == "uk" else c_code.lower()
+
             threading.Thread(
                 target=self.player.flags.load_or_fetch,
                 args=(c_code, self.player.current_channel_name),
