@@ -1052,6 +1052,7 @@ class Player:
                     self.globe_process.terminate()
             except Exception:
                 pass
+
             self.globe_process = None
 
     def update_globe_country(self, code: str) -> None:
