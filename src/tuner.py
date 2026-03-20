@@ -269,6 +269,12 @@ class Tuner:
         )
 
         self.player.schedule_update_country_count()
+        globe_code = self.player.current_country_code
+
+        if globe_code == "uk":
+            globe_code = "gb"
+
+        self.player.update_globe_country(globe_code)
 
         if isinstance(c_code, str) and len(c_code) == 2:
             c_code = "gb" if c_code.lower() == "uk" else c_code.lower()

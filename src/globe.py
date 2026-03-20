@@ -40,12 +40,19 @@ def stdin_listener(window):
     try:
         for line in sys.stdin:
             try:
-                parts = line.strip().split(",")
+                line = line.strip()
 
-                if len(parts) == 4:
-                    x, y, w, h = map(int, parts)
-                    window.resize(w, h)
-                    window.move(x, y)
+                if line.startswith("COUNTRY:"):
+                    parts = line.split(":", 1)
+                    code = parts[1] if len(parts) > 1 else ""
+                    window.evaluate_js(f"if (window.setCountry) window.setCountry('{code}');")
+                else:
+                    parts = line.split(",")
+
+                    if len(parts) == 4:
+                        x, y, w, h = map(int, parts)
+                        window.resize(w, h)
+                        window.move(x, y)
             except Exception:
                 pass
     except Exception:
@@ -84,11 +91,25 @@ html = """
     <div id="globeViz"></div>
 
     <script>
+        let activeCountryCode = null;
+
+        window.setCountry = function(code) {
+            activeCountryCode = code ? code.toUpperCase() : null;
+            if (window.worldInstance) {
+                window.worldInstance.polygonCapColor(d => isMatch(d) ? "lightgreen" : "#33467C");
+            }
+        };
+
+        function isMatch(d) {
+            if (!activeCountryCode) return false;
+            return d.properties.ISO_A2 === activeCountryCode ||
+                   d.properties.ISO_A2_EH === activeCountryCode ||
+                   d.properties.WB_A2 === activeCountryCode;
+        }
+
         fetch("https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson")
             .then(res => res.json())
             .then(countries => {
-                let clickedD = null;
-
                 const world = Globe()
                     (document.getElementById("globeViz"))
                     .backgroundColor("#1A1B26")
@@ -97,20 +118,17 @@ html = """
                     .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-dark.jpg")
                     .polygonsData(countries.features)
                     .polygonAltitude(0.01)
-                    .polygonCapColor(d => d === clickedD ? "lightgreen" : "#33467C")
+                    .polygonCapColor(d => isMatch(d) ? "lightgreen" : "#33467C")
                     .polygonSideColor(() => "#1F2335")
                     .polygonStrokeColor(() => "#7AA2F7")
 
                     .onPolygonHover(hoverD => {
-                        world.polygonCapColor(d => d === clickedD ? "lightgreen" : (d === hoverD ? "#7AA2F7" : "#33467C"));
+                        world.polygonCapColor(d => isMatch(d) ? "lightgreen" : (d === hoverD ? "#7AA2F7" : "#33467C"));
                         const tooltip = document.getElementById("hover-tooltip");
                         tooltip.innerText = hoverD ? hoverD.properties.ADMIN : "";
                     })
 
                     .onPolygonClick(clickedPoly => {
-                        clickedD = clickedPoly;
-                        world.polygonCapColor(d => d === clickedD ? "lightgreen" : "#33467C");
-
                         if (window.pywebview) {
                             window.pywebview.api.select_country(clickedPoly.properties.ADMIN);
                         }
@@ -120,6 +138,8 @@ html = """
 
                 world.controls().autoRotate = false;
                 world.controls().autoRotateSpeed = 1.0;
+
+                window.worldInstance = world;
 
                 window.addEventListener("resize", (event) => {
                     world.width([event.target.innerWidth]);
@@ -166,11 +186,11 @@ if __name__ == "__main__":
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     icon_path = os.path.join(script_dir, "icon.png")
-
     threading.Thread(target=stdin_listener, args=(window,), daemon=True).start()
 
     if os.path.exists(icon_path):
         webview.start(icon=icon_path)
     else:
         webview.start()
+
     os._exit(0)

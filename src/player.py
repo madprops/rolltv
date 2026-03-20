@@ -980,6 +980,16 @@ class Player:
         self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         self.check_globe_process()
 
+        def send_initial_country(retries: int = 5) -> None:
+            if self.globe_visible and retries > 0:
+                globe_code = self.current_country_code
+                if globe_code == "uk":
+                    globe_code = "gb"
+                self.update_globe_country(globe_code)
+                self.root.after(1000, send_initial_country, retries - 1)
+
+        self.root.after(1000, send_initial_country)
+
     def hide_globe(self) -> None:
         if not self.globe_visible:
             return
@@ -995,6 +1005,14 @@ class Player:
             except Exception:
                 pass
             self.globe_process = None
+
+    def update_globe_country(self, code: str) -> None:
+        if self.globe_visible and self.globe_process and self.globe_process.stdin:
+            try:
+                self.globe_process.stdin.write(f"COUNTRY:{code}\n".encode("utf-8"))
+                self.globe_process.stdin.flush()
+            except Exception:
+                pass
 
     def set_country_from_globe(self, country_name: str) -> None:
         self.country_var.set(country_name)
