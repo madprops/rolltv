@@ -25,7 +25,7 @@ class Topbar:
         btn.bind("<Enter>", on_enter)
         btn.bind("<Leave>", on_leave)
 
-    def make_button(self, text, command) -> None:
+    def make_button(self, text: str, command: Any) -> tk.Button:
         btn = tk.Button(
             self.player.btn_frame,
             text=text,
@@ -176,6 +176,13 @@ class Topbar:
         self.player.copy_btn = self.make_button("Copy", self.player.copy_link)
         self.player.paste_btn = self.make_button("Paste", self.player.paste_link)
         self.player.world_btn = self.make_button("World", self.player.toggle_globe)
-        self.player.country_btn = self.make_button("Country", self.player.toggle_country)
-        self.player.history_btn = self.make_button("History", self.player.toggle_history)
+
+        self.player.country_btn = self.make_button(
+            "Country", self.player.toggle_country
+        )
+
+        self.player.history_btn = self.make_button(
+            "History", self.player.toggle_history
+        )
+
         self.player.play_btn = self.make_button("Roll", self.player.play_random)
