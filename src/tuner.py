@@ -174,6 +174,7 @@ class Tuner:
             )
         else:
             if self.player.is_roll and self.player.stall_retries < data.max_retries:
+
                 def retry_find() -> None:
                     if not self.player.tuning or my_search_id != self.player.search_id:
                         return
@@ -192,7 +193,9 @@ class Tuner:
 
                 self.player.root.after(
                     0,
-                    lambda: self.player.show_message("Could not find a working stream."),
+                    lambda: self.player.show_message(
+                        "Could not find a working stream."
+                    ),
                 )
 
     def prepare_switch(self, channel: dict[str, Any], search_id: int) -> None:

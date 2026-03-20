@@ -45,7 +45,9 @@ def stdin_listener(window):
                 if line.startswith("COUNTRY:"):
                     parts = line.split(":", 1)
                     code = parts[1] if len(parts) > 1 else ""
-                    window.evaluate_js(f"if (window.setCountry) window.setCountry('{code}');")
+                    window.evaluate_js(
+                        f"if (window.setCountry) window.setCountry('{code}');"
+                    )
                 else:
                     parts = line.split(",")
 

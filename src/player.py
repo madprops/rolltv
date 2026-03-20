@@ -981,7 +981,7 @@ class Player:
                     self.handle_idle_change(self.active_idx, is_idle)
                 else:
                     if getattr(self, "stall_timeout_id", None) is not None:
-                        self.root.after_cancel(self.stall_timeout_id)
+                        self.root.after_cancel(self.stall_timeout_id)  # type: ignore
                         self.stall_timeout_id = None
 
     def handle_idle_change(self, idx: int, is_idle: bool) -> None:
@@ -997,7 +997,7 @@ class Player:
                 )
         else:
             if getattr(self, "stall_timeout_id", None) is not None:
-                self.root.after_cancel(self.stall_timeout_id)
+                self.root.after_cancel(self.stall_timeout_id)  # type: ignore
                 self.stall_timeout_id = None
 
     def reconnect_stream(self) -> None:
