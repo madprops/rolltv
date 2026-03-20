@@ -123,8 +123,8 @@ class Player:
                 wid=str(frame.winfo_id()),
                 hwdec="auto",
                 input_vo_keyboard=True,
-                demuxer_max_bytes=134217728,       # 128 MB forward buffer
-                demuxer_max_back_bytes=1073741824, # 1 GB backward buffer (approx 15-20 mins HD)
+                demuxer_max_bytes=134217728,  # 128 MB forward buffer
+                demuxer_max_back_bytes=1073741824,  # 1 GB backward buffer (approx 15-20 mins HD)
                 cache="yes",
             )
 
@@ -188,7 +188,9 @@ class Player:
         filepath = os.path.join(capture_dir, filename)
 
         try:
-            player.command("dump-cache", f"{start_time:.3f}", f"{end_time:.3f}", filepath)
+            player.command(
+                "dump-cache", f"{start_time:.3f}", f"{end_time:.3f}", filepath
+            )
             self.show_message(f"Saved {duration}s capture")
         except Exception as e:
             utils.print(f"Capture failed: {e}")
