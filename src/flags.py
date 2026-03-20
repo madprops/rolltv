@@ -39,9 +39,7 @@ class Flags:
             return
         try:
             self.player.current_flag_img = tk.PhotoImage(file=flag_path)
-            self.player.flag_label.config(
-                image=self.player.current_flag_img
-            )
+            self.player.flag_label.config(image=self.player.current_flag_img)
         except Exception:
             self.clear()
 
