@@ -278,7 +278,7 @@ class Tuner:
         self.player.current_country = c_name.title() if c_name else "Unknown"
 
         self.player.current_channel_name = (
-            f"{self.player.pending_channel.get('name', 'Unknown')}   "
+            self.player.pending_channel.get("name", "Unknown")
         )
 
         c_code = self.player.pending_channel.get("country_code", "")

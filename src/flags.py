@@ -39,15 +39,15 @@ class Flags:
             return
         try:
             self.player.current_flag_img = tk.PhotoImage(file=flag_path)
-            self.player.name_label.config(
-                image=self.player.current_flag_img, compound=tk.RIGHT
+            self.player.flag_label.config(
+                image=self.player.current_flag_img
             )
         except Exception:
             self.clear()
 
     def clear(self) -> None:
         self.player.current_flag_img = None
-        self.player.name_label.config(image="", compound=tk.NONE)
+        self.player.flag_label.config(image="")
 
     def fetch_only(self, c_code: str) -> None:
         flag_path = self.get_path(c_code)

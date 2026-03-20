@@ -35,6 +35,7 @@ class Player:
     scrollbar: tk.Scrollbar
     sidebar_version_label: tk.Label
     name_label: tk.Label
+    flag_label: tk.Label
     top_frame: tk.Frame
     country_entry: tk.Entry
     lang_cb: ttk.Combobox
@@ -218,7 +219,8 @@ class Player:
             self.show_message("Capture failed")
 
     def show_message(self, text: str, auto_restore: bool = True) -> None:
-        self.name_label.config(text=text, image="", compound=tk.NONE)
+        self.name_label.config(text=text)
+        self.flag_label.config(image="")
 
         if self.msg_timeout_id is not None:
             self.root.after_cancel(self.msg_timeout_id)
@@ -237,7 +239,7 @@ class Player:
         self.name_label.config(text=self.current_channel_name)
 
         if getattr(self, "current_flag_img", None):
-            self.name_label.config(image=self.current_flag_img, compound=tk.RIGHT)  # type: ignore
+            self.flag_label.config(image=self.current_flag_img)  # type: ignore
 
     def register_player_bindings(self, player: mpv.MPV) -> None:
         @player.on_key_press("MBTN_LEFT_DBL")  # type: ignore

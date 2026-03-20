@@ -11,6 +11,7 @@ from utils import utils
 class Topbar:
     def __init__(self, player: Any) -> None:
         self.player = player
+        self.name_space = 20
         self.create_topbar()
 
     def bind_hover(self, btn: tk.Button) -> None:
@@ -70,10 +71,10 @@ class Topbar:
             cursor="hand2",
         )
 
-        self.player.menu_btn.pack(side=tk.LEFT, padx=(20, 5))
+        self.player.menu_btn.pack(side=tk.LEFT, padx=(self.name_space, self.name_space))
         self.player.menu_btn.bind("<Button-1>", self.player.toggle_menu)
         self.player.info_frame = tk.Frame(self.player.top_frame, bg=data.bg_color)
-        self.player.info_frame.pack(side=tk.LEFT, padx=(10, 0))
+        self.player.info_frame.pack(side=tk.LEFT)
 
         self.player.name_label = tk.Label(
             self.player.info_frame,
@@ -84,10 +85,18 @@ class Topbar:
             cursor="hand2",
         )
 
-        self.player.name_label.pack(anchor=tk.W)
+        self.player.name_label.pack(side=tk.LEFT)
         self.player.name_label.bind("<Button-1>", self.player.cancel_tuning)
+
+        self.player.flag_label = tk.Label(
+            self.player.info_frame, bg=data.bg_color, cursor="hand2"
+        )
+
+        self.player.flag_label.pack(side=tk.LEFT, padx=(self.name_space, 0))
+        self.player.flag_label.bind("<Button-1>", self.player.cancel_tuning)
+
         self.player.btn_frame = tk.Frame(self.player.top_frame, bg=data.bg_color)
-        self.player.btn_frame.pack(side=tk.RIGHT, padx=(0, 20))
+        self.player.btn_frame.pack(side=tk.RIGHT, padx=(0, self.name_space))
 
         self.player.country_frame = tk.Frame(
             self.player.btn_frame,
