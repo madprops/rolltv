@@ -515,7 +515,7 @@ class Player:
         if self.country_count_job is not None:
             self.root.after_cancel(self.country_count_job)
 
-        self.country_count_job = self.root.after(300, self.update_country_count)
+        self.country_count_job = self.root.after(1000, self.update_country_count)
 
     def update_country_count(self) -> None:
         self.country_count_job = None
@@ -672,7 +672,8 @@ class Player:
         if immediate:
             self._update_sidebar_impl()
         else:
-            self.sidebar_update_job = self.root.after(150, self._update_sidebar_impl)
+            delay = 1000 if self.active_sidebar == "country" else 150
+            self.sidebar_update_job = self.root.after(delay, self._update_sidebar_impl)
 
     def _update_sidebar_impl(self) -> None:
         self.sidebar_update_job = None
