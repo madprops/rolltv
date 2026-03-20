@@ -176,6 +176,7 @@ class Player:
             return
 
         current_time = getattr(player, "playback_time", 0)
+
         if current_time is None:
             current_time = 0
 
@@ -191,7 +192,13 @@ class Player:
             player.command(
                 "dump-cache", f"{start_time:.3f}", f"{end_time:.3f}", filepath
             )
-            self.show_message(f"Saved {duration}s capture")
+
+            if duration <= 60:
+                duration_str = f"{duration}s"
+            else:
+                duration_str = f"{duration // 60}m"
+
+            self.show_message(f"Saved {duration_str} capture")
         except Exception as e:
             utils.print(f"Capture failed: {e}")
             self.show_message("Capture failed")
