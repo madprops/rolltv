@@ -7,7 +7,7 @@ from utils import utils
 
 
 class Store:
-    def load_data(self) -> dict[str, str]:
+    def load_data(self) -> dict[str, Any]:
         config_dir = os.path.dirname(data.data_file)
 
         if not os.path.exists(config_dir):
@@ -16,13 +16,13 @@ class Store:
         if os.path.exists(data.data_file):
             try:
                 with open(data.data_file, "r", encoding="utf-8") as f:
-                    return cast(dict[str, str], json.load(f))
+                    return cast(dict[str, Any], json.load(f))
             except Exception as e:
                 utils.print(f"Failed to load data: {e}")
 
         return {}
 
-    def save_data(self, payload: dict[str, str]) -> None:
+    def save_data(self, payload: dict[str, Any]) -> None:
         config_dir = os.path.dirname(data.data_file)
 
         if not os.path.exists(config_dir):

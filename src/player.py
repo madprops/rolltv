@@ -614,6 +614,8 @@ class Player:
             {
                 "country": self.country_var.get(),
                 "language": self.selected_lang.get(),
+                "show_status": args.show_status,
+                "sound_fx": args.sound_fx,
             }
         )
 
@@ -685,6 +687,7 @@ class Player:
 
     def toggle_status(self) -> None:
         args.show_status = not args.show_status
+        self.save_data()
 
         if args.show_status:
             if not self.is_fullscreen:
@@ -700,6 +703,7 @@ class Player:
 
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
+        self.save_data()
 
         self.show_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
 
