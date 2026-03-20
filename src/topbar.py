@@ -142,7 +142,7 @@ class Topbar:
             "TCombobox",
             fieldbackground=[("readonly", data.input_bg)],
             selectbackground=[("readonly", data.input_bg)],
-            selectforeground=[("readonly", data.accent_color)],
+            selectforeground=[("readonly", data.fg_color)],
             background=[("readonly", data.btn_bg), ("active", data.btn_active)],
             bordercolor=[("readonly", data.btn_border)],
         )
