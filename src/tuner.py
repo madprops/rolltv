@@ -1,6 +1,8 @@
+import sys
 import random
 import threading
 import urllib.request
+import concurrent.futures
 from typing import Any
 
 from data import data
@@ -121,10 +123,11 @@ class Tuner:
             return
 
         candidates = random.sample(valid_channels, min(30, len(valid_channels)))
+        found_event = threading.Event()
 
-        for candidate in candidates:
-            if not self.player.tuning or my_search_id != self.player.search_id:
-                return
+        def check_candidate(candidate: dict[str, Any]) -> dict[str, Any] | None:
+            if found_event.is_set() or not self.player.tuning or my_search_id != self.player.search_id:
+                return None
 
             if (
                 self.player.is_roll
@@ -132,7 +135,7 @@ class Tuner:
                 and (candidate["url"] == self.player.pending_channel["url"])
                 and (len(valid_channels) > 1)
             ):
-                continue
+                return None
 
             try:
                 req = urllib.request.Request(
@@ -142,10 +145,10 @@ class Tuner:
                 )
 
                 with urllib.request.urlopen(req, timeout=data.url_timeout) as response:
-                    if not self.player.tuning or (
+                    if found_event.is_set() or not self.player.tuning or (
                         my_search_id != self.player.search_id
                     ):
-                        return
+                        return None
 
                     if response.status in [200, 206, 301, 302]:
                         chunk = response.read(2048)
@@ -158,12 +161,31 @@ class Tuner:
                                     "#EXTINF" not in text_chunk
                                     and "#EXT-X" not in text_chunk
                                 ):
-                                    continue
+                                    return None
 
-                            working_channel = candidate
-                            break
+                            return candidate
             except Exception:
-                continue
+                pass
+
+            return None
+
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+        futures = [executor.submit(check_candidate, c) for c in candidates]
+
+        for future in concurrent.futures.as_completed(futures):
+            if not self.player.tuning or my_search_id != self.player.search_id:
+                break
+
+            result = future.result()
+            if result is not None:
+                working_channel = result
+                found_event.set()
+                break
+
+        if sys.version_info >= (3, 9):
+            executor.shutdown(wait=False, cancel_futures=True)
+        else:
+            executor.shutdown(wait=False)
 
         if not self.player.tuning or my_search_id != self.player.search_id:
             return
