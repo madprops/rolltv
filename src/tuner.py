@@ -126,7 +126,11 @@ class Tuner:
         found_event = threading.Event()
 
         def check_candidate(candidate: dict[str, Any]) -> dict[str, Any] | None:
-            if found_event.is_set() or not self.player.tuning or my_search_id != self.player.search_id:
+            if (
+                found_event.is_set()
+                or not self.player.tuning
+                or my_search_id != self.player.search_id
+            ):
                 return None
 
             if (
@@ -145,8 +149,10 @@ class Tuner:
                 )
 
                 with urllib.request.urlopen(req, timeout=data.url_timeout) as response:
-                    if found_event.is_set() or not self.player.tuning or (
-                        my_search_id != self.player.search_id
+                    if (
+                        found_event.is_set()
+                        or not self.player.tuning
+                        or (my_search_id != self.player.search_id)
                     ):
                         return None
 
