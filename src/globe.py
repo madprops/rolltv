@@ -166,9 +166,12 @@ html = """
                 world.controls().autoRotateSpeed = 1.0;
                 window.worldInstance = world;
 
-                window.addEventListener("resize", (event) => {
-                    world.width([event.target.innerWidth]);
-                    world.height([event.target.innerHeight]);
+                world.width(window.innerWidth);
+                world.height(window.innerHeight);
+
+                window.addEventListener("resize", () => {
+                    world.width(window.innerWidth);
+                    world.height(window.innerHeight);
                 });
             });
     </script>
