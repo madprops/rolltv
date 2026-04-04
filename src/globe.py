@@ -179,6 +179,7 @@ html = """
 if __name__ == "__main__":
     # Silence pywebview logger and GTK import warnings
     logging.getLogger("pywebview").setLevel(logging.CRITICAL)
+    os.environ["QT_QPA_PLATFORM"] = "wayland"
     os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-logging"
     os.environ["WEBKIT_DISABLE_DMABUF_RENDERER"] = "1"
     os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"

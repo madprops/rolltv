@@ -80,12 +80,51 @@
     devShells = forAllSystems (system:
       let
         pkgs = import nixpkgs {inherit system;};
+
+        # Create the custom python environment that includes tkinter
+        myPython = pkgs.python3.withPackages (ps: [
+          ps.tkinter
+          ps.mpv
+          ps.pywebview
+          ps.qtpy
+          ps.pyqt6
+          ps.pyqt6-webengine
+        ]);
+
+        # Standalone executable to initialize the venv
+        venv_reqs = pkgs.writeShellScriptBin "venv_reqs" ''
+          if [ ! -d "venv" ]; then
+            echo "Creating virtual environment..."
+            ${myPython}/bin/python -m venv --system-site-packages venv
+          fi
+
+          source venv/bin/activate
+
+          if [ -f "requirements.txt" ]; then
+            echo "Installing requirements..."
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt found."
+          fi
+        '';
+
       in {
         default = pkgs.mkShell {
           packages = [
-            pkgs.python3
+            myPython
             pkgs.python3Packages.pip
             pkgs.python3Packages.virtualenv
+            pkgs.mpv
+            pkgs.qt6.qtbase
+            pkgs.qt6.qtwayland
+            venv_reqs
+          ];
+
+          # Expose C libraries to Python's ctypes module
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+            pkgs.mpv
+            pkgs.qt6.qtbase
+            pkgs.qt6.qtwayland
           ];
         };
       });
