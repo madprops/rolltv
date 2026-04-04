@@ -96,6 +96,11 @@
           ps.pyqt6-webengine
         ]);
 
+        # Create a custom ruby environment that includes the git gem
+        myRuby = pkgs.ruby.withPackages (ps: [
+          ps.git
+        ]);
+
         # Standalone executable to initialize the venv
         venv_reqs = pkgs.writeShellScriptBin "venv_reqs" ''
           if [ ! -d "venv" ]; then
@@ -124,6 +129,7 @@
             pkgs.qt6.qtwayland
             pkgs.ruff
             pkgs.mypy
+            myRuby
             venv_reqs
           ];
 
