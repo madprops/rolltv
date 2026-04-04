@@ -117,6 +117,8 @@
             pkgs.mpv
             pkgs.qt6.qtbase
             pkgs.qt6.qtwayland
+            pkgs.ruff
+            pkgs.mypy
             venv_reqs
           ];
 

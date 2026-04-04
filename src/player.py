@@ -943,7 +943,9 @@ class Player:
 
         if self.is_wayland and shutil.which("wl-paste"):
             try:
-                res = subprocess.run(["wl-paste", "--no-newline"], capture_output=True, text=True)
+                res = subprocess.run(
+                    ["wl-paste", "--no-newline"], capture_output=True, text=True
+                )
                 if res.returncode == 0:
                     clip_text = res.stdout.strip()
             except Exception:
@@ -1059,7 +1061,9 @@ class Player:
 
         script_path = os.path.join(os.path.dirname(__file__), "globe.py")
         cmd = [sys.executable, script_path, info.name]
-        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, env=os.environ.copy())
+        self.globe_process = subprocess.Popen(
+            cmd, stdin=subprocess.PIPE, env=os.environ.copy()
+        )
         self.check_globe_process()
 
         def send_initial_country(retries: int = 5) -> None:
