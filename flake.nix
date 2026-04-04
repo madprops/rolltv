@@ -36,18 +36,20 @@
           # The actual libraries that the app needs to inspect and wrap
           buildInputs = [
             pkgs.qt6.qtbase
-            pkgs.mpv # The system mpv library
+            pkgs.mpv
           ];
 
-          # The Nix build sandbox prevents writing to ~/.local.
-          # We set HOME to a temporary directory so your setup.py post-install doesn't crash.
+          # We set HOME to a temp directory so post-install doesn't crash.
+          # We ALSO patch requirements.txt on the fly so the PyPI name "python-mpv"
+          # matches the Nixpkgs name "mpv", bypassing the strict dependency checker crash.
           preBuild = ''
             export HOME=$(mktemp -d)
+            sed -i 's/python-mpv/mpv/g' requirements.txt
           '';
 
           # PyPI dependencies mapped to Nixpkgs python packages
           propagatedBuildInputs = with pythonPackages; [
-            python-mpv
+            mpv
             pywebview
             qtpy
             pyqt6
@@ -59,10 +61,8 @@
             APP_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.name)')
             APP_FULL_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.full_name)')
 
-            # Install the icon to the standard XDG directory in the Nix store
             install -Dm644 src/icon.png $out/share/icons/hicolor/256x256/apps/$APP_NAME.png
 
-            # Create the desktop file pointing to the Nix store executable
             mkdir -p $out/share/applications
             cat > $out/share/applications/$APP_NAME.desktop <<EOF
             [Desktop Entry]
