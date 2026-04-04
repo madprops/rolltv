@@ -1059,7 +1059,7 @@ class Player:
 
         script_path = os.path.join(os.path.dirname(__file__), "globe.py")
         cmd = [sys.executable, script_path, info.name]
-        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, env=self.original_env)
+        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, env=os.environ.copy())
         self.check_globe_process()
 
         def send_initial_country(retries: int = 5) -> None:

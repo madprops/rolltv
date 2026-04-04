@@ -180,6 +180,8 @@ if __name__ == "__main__":
     # Silence pywebview logger and GTK import warnings
     logging.getLogger("pywebview").setLevel(logging.CRITICAL)
     os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-logging"
+    os.environ["WEBKIT_DISABLE_DMABUF_RENDERER"] = "1"
+    os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
     x, y, w, h = 0, 0, 800, 600
     app_name = "rolltv"
 
@@ -192,6 +194,8 @@ if __name__ == "__main__":
         )
 
         app_name = sys.argv[5]
+    elif len(sys.argv) == 2:
+        app_name = sys.argv[1]
 
     api = Api(app_name)
 
