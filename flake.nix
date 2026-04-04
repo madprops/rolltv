@@ -33,9 +33,10 @@
             pkgs.qt6.wrapQtAppsHook
           ];
 
-          # The actual Qt libraries that the hook needs to inspect and wrap
+          # The actual libraries that the app needs to inspect and wrap
           buildInputs = [
             pkgs.qt6.qtbase
+            pkgs.mpv # The system mpv library
           ];
 
           # The Nix build sandbox prevents writing to ~/.local.
@@ -46,7 +47,7 @@
 
           # PyPI dependencies mapped to Nixpkgs python packages
           propagatedBuildInputs = with pythonPackages; [
-            mpv
+            python-mpv
             pywebview
             qtpy
             pyqt6
