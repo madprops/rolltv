@@ -20,8 +20,13 @@
         default = pythonPackages.buildPythonApplication {
           pname = "rolltv";
           version = "1.0.0";
+          pyproject = true;
 
           src = ./.;
+
+          build-system = [
+            pythonPackages.setuptools
+          ];
 
           # The Nix build sandbox prevents writing to ~/.local.
           # We set HOME to a temporary directory so your setup.py post-install doesn't crash.
