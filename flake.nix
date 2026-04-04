@@ -19,7 +19,7 @@
       in {
         default = pythonPackages.buildPythonApplication {
           pname = "rolltv";
-          version = "1.0.0";
+          version = "9.1.0";
           pyproject = true;
 
           src = ./.;
