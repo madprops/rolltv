@@ -33,6 +33,11 @@
             pkgs.qt6.wrapQtAppsHook
           ];
 
+          # The actual Qt libraries that the hook needs to inspect and wrap
+          buildInputs = [
+            pkgs.qt6.qtbase
+          ];
+
           # The Nix build sandbox prevents writing to ~/.local.
           # We set HOME to a temporary directory so your setup.py post-install doesn't crash.
           preBuild = ''
