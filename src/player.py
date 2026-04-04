@@ -5,6 +5,7 @@ import datetime
 import mpv  # type: ignore
 import threading
 import subprocess
+import shutil
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
@@ -44,6 +45,18 @@ class Player:
     play_btn: tk.Button
 
     def __init__(self, root: tk.Tk, channels: list[dict[str, Any]]) -> None:
+        self.original_env = os.environ.copy()
+
+        self.is_wayland = (
+            os.environ.get("XDG_SESSION_TYPE") == "wayland"
+            or "WAYLAND_DISPLAY" in os.environ
+        )
+
+        if self.is_wayland:
+            # Tkinter runs via XWayland on Wayland systems.
+            # Force libmpv to also use X11/XWayland so it can embed successfully using 'wid'.
+            os.environ.pop("WAYLAND_DISPLAY", None)
+
         self.root = root
         self.channels = channels
         self.current_url = ""
@@ -908,32 +921,51 @@ class Player:
     def copy_link(self) -> None:
         if self.current_url != "":
             try:
-                subprocess.run(
-                    ["xclip", "-selection", "clipboard"],
-                    input=self.current_url.encode("utf-8"),
-                    check=True,
-                )
+                if self.is_wayland and shutil.which("wl-copy"):
+                    subprocess.run(
+                        ["wl-copy"],
+                        input=self.current_url.encode("utf-8"),
+                        check=True,
+                    )
+                else:
+                    subprocess.run(
+                        ["xclip", "-selection", "clipboard"],
+                        input=self.current_url.encode("utf-8"),
+                        check=True,
+                    )
 
                 self.show_message("URL Copied")
             except Exception as e:
                 utils.print(f"Failed to copy to clipboard: {e}")
 
     def paste_link(self) -> None:
-        try:
-            clip_text = self.root.clipboard_get().strip()
+        clip_text = ""
 
-            if clip_text != "":
-                found_name = "Pasted Stream"
+        if self.is_wayland and shutil.which("wl-paste"):
+            try:
+                res = subprocess.run(["wl-paste", "--no-newline"], capture_output=True, text=True)
+                if res.returncode == 0:
+                    clip_text = res.stdout.strip()
+            except Exception:
+                pass
 
-                for ch in self.channels:
-                    if ch["url"] == clip_text:
-                        found_name = ch["name"]
-                        break
+        if not clip_text:
+            try:
+                clip_text = self.root.clipboard_get().strip()
+            except tk.TclError:
+                utils.print("Clipboard is empty or inaccessible.")
+                return
 
-                channel = {"name": found_name, "url": clip_text}
-                self.play_specific(channel, True)
-        except tk.TclError:
-            utils.print("Clipboard is empty or inaccessible.")
+        if clip_text != "":
+            found_name = "Pasted Stream"
+
+            for ch in self.channels:
+                if ch["url"] == clip_text:
+                    found_name = ch["name"]
+                    break
+
+            channel = {"name": found_name, "url": clip_text}
+            self.play_specific(channel, True)
 
     def on_mouse_wheel(self, event: Any) -> None:
         if event.delta > 0:
@@ -1027,7 +1059,7 @@ class Player:
 
         script_path = os.path.join(os.path.dirname(__file__), "globe.py")
         cmd = [sys.executable, script_path, info.name]
-        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, env=self.original_env)
         self.check_globe_process()
 
         def send_initial_country(retries: int = 5) -> None:
