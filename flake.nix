@@ -28,14 +28,7 @@
             pythonPackages.setuptools
           ];
 
-          # This hook ensures the Python app can find Qt platform plugins at runtime
-          nativeBuildInputs = [
-            pkgs.qt6.wrapQtAppsHook
-          ];
-
-          # The actual libraries that the app needs to inspect and wrap
           buildInputs = [
-            pkgs.qt6.qtbase
             pkgs.mpv
           ];
 
@@ -48,12 +41,11 @@
           '';
 
           # PyPI dependencies mapped to Nixpkgs python packages
+          # We include tkinter here to ensure the _tkinter C-extension is available
           propagatedBuildInputs = with pythonPackages; [
+            tkinter
             mpv
             pywebview
-            qtpy
-            pyqt6
-            pyqt6-webengine
           ];
 
           # Install desktop file and icon properly into the Nix store ($out).
