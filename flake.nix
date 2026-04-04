@@ -28,21 +28,27 @@
             pythonPackages.setuptools
           ];
 
+          # This hook ensures the Python app can find Qt platform plugins at runtime
+          nativeBuildInputs = [
+            pkgs.qt6.wrapQtAppsHook
+          ];
+
           # The Nix build sandbox prevents writing to ~/.local.
           # We set HOME to a temporary directory so your setup.py post-install doesn't crash.
           preBuild = ''
             export HOME=$(mktemp -d)
           '';
 
-          # PyPI dependencies must be mapped to Nixpkgs python packages here.
-          # They cannot be fetched from requirements.txt at build time due to sandbox isolation.
+          # PyPI dependencies mapped to Nixpkgs python packages
           propagatedBuildInputs = with pythonPackages; [
-            # Example: requests
-            # Add your nix-equivalent requirements here
+            mpv
+            pywebview
+            qtpy
+            pyqt6
+            pyqt6-webengine
           ];
 
           # Install desktop file and icon properly into the Nix store ($out).
-          # We extract the dynamic info directly from your src/info.py.
           postInstall = ''
             APP_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.name)')
             APP_FULL_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.full_name)')
