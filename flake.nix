@@ -56,6 +56,11 @@
             pyqt6-webengine
           ];
 
+          # Expose C libraries to Python's ctypes module at runtime
+          makeWrapperArgs = [
+            "--prefix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath [ pkgs.mpv pkgs.qt6.qtbase pkgs.qt6.qtwayland ]}"
+          ];
+
           postInstall = ''
             APP_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.name)')
             APP_FULL_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.full_name)')
