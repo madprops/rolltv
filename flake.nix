@@ -28,27 +28,34 @@
             pythonPackages.setuptools
           ];
 
+          # We need the Qt wrapper for PyQt6 to find Wayland/X11 plugins
+          nativeBuildInputs = [
+            pkgs.qt6.wrapQtAppsHook
+          ];
+
+          # The C-libraries required at runtime by the Python wrappers
           buildInputs = [
+            pkgs.qt6.qtbase
+            pkgs.qt6.qtwayland
             pkgs.mpv
           ];
 
-          # We set HOME to a temp directory so post-install doesn't crash.
-          # We ALSO patch requirements.txt on the fly so the PyPI name "python-mpv"
-          # matches the Nixpkgs name "mpv", bypassing the strict dependency checker crash.
           preBuild = ''
             export HOME=$(mktemp -d)
+            # Fix PyPI to Nixpkgs naming mismatch to prevent dependency checker crash
             sed -i 's/python-mpv/mpv/g' requirements.txt
           '';
 
-          # PyPI dependencies mapped to Nixpkgs python packages
-          # We include tkinter here to ensure the _tkinter C-extension is available
+          # ALL required python packages, including tkinter for main.py
           propagatedBuildInputs = with pythonPackages; [
             tkinter
             mpv
             pywebview
+            qtpy
+            pyqt6
+            pyqt6-webengine
           ];
 
-          # Install desktop file and icon properly into the Nix store ($out).
           postInstall = ''
             APP_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.name)')
             APP_FULL_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.full_name)')
