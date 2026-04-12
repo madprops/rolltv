@@ -1,4 +1,5 @@
 import tkinter as tk
+import time
 from typing import Any
 
 from data import data
@@ -107,8 +108,18 @@ class Status:
                 getattr(player_mpv, "vo_drop_frame_count", None) or 0
             )
 
+            elapsed = time.time() - getattr(self.player, "playback_start_time", time.time())
+            if elapsed < 60:
+                play_time_str = f"{int(elapsed)}s"
+            elif elapsed < 3600:
+                play_time_str = f"{int(elapsed // 60)}m"
+            elif elapsed < 86400:
+                play_time_str = f"{elapsed / 3600:.1f}h"
+            else:
+                play_time_str = f"{elapsed / 86400:.1f}d"
+
             hwdec = getattr(player_mpv, "hwdec_current", None)
-            status_text = f"{self.player.current_country} | {res} | {fps_str} | {br_str} | {vc} / {ac} | {'HW: ' + hwdec.upper() if hwdec and hwdec != 'no' else 'SW'} | Buf: {cache:.1f}s | Drops: {drops}"
+            status_text = f"{self.player.current_country} | {res} | {fps_str} | {br_str} | {vc} / {ac} | {'HW: ' + hwdec.upper() if hwdec and hwdec != 'no' else 'SW'} | Buf: {cache:.1f}s | Drops: {drops} | Time: {play_time_str}"
             self.set_text(status_text)
         else:
             self.set_text("")

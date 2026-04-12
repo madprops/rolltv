@@ -92,6 +92,7 @@ class Player:
         self.active_sidebar: str | None = None
         self.stall_retries = 0
         self.country_placeholder = "Country"
+        self.playback_start_time = time.time()
         self.root.title(data.title)
         self.root.geometry(f"{data.width}x{data.height}")
         self.root.configure(bg=data.bg_color)

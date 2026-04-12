@@ -1,4 +1,5 @@
 import sys
+import time
 import random
 import threading
 import urllib.request
@@ -308,6 +309,7 @@ class Tuner:
         self.player.active_idx = ready_idx
         self.player.frames[ready_idx].tkraise()
         self.player.players[ready_idx].mute = False
+        self.player.playback_start_time = time.time()
         old_idx = 1 if ready_idx == 0 else 0
         self.player.player_search_ids[old_idx] = -1
         self.player.players[old_idx].stop()
