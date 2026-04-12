@@ -305,6 +305,7 @@ class Player:
 
             if self.active_sidebar:
                 self.sidebar_frame.pack_forget()
+
             if self.menu_sidebar_visible:
                 self.menu_sidebar_frame.pack_forget()
         else:
@@ -580,6 +581,7 @@ class Player:
     def on_country_var_change(self, *args: Any) -> None:
         if self.active_sidebar == "country":
             self.update_sidebar()
+
         self.schedule_update_country_count()
 
     def schedule_update_country_count(self, *args: Any) -> None:
@@ -733,7 +735,6 @@ class Player:
     def toggle_sound_fx(self) -> None:
         args.sound_fx = not args.sound_fx
         self.save_data()
-
         self.show_message("Sound FX Enabled" if args.sound_fx else "Sound FX Disabled")
 
     def exit_app(self) -> None:
@@ -810,6 +811,7 @@ class Player:
 
                 if country_match:
                     name_match = filter_text in ch["name"].lower()
+
                     country_name_match = (
                         filter_text in ch.get("country_name", "").lower()
                     )
@@ -952,6 +954,7 @@ class Player:
                 res = subprocess.run(
                     ["wl-paste", "--no-newline"], capture_output=True, text=True
                 )
+
                 if res.returncode == 0:
                     clip_text = res.stdout.strip()
             except Exception:
@@ -1064,14 +1067,11 @@ class Player:
             return
 
         self.globe_visible = True
-
         script_path = os.path.join(os.path.dirname(__file__), "globe.py")
         cmd = [sys.executable, script_path, info.name]
         env = os.environ.copy()
         env["PYTHONPATH"] = os.pathsep.join(sys.path)
-
         self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, env=env)
-
         self.check_globe_process()
 
         def send_initial_country(retries: int = 5) -> None:
