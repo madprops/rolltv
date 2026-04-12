@@ -803,12 +803,16 @@ class Player:
                     c_code = (ch.get("country_code") or "").lower()
                     c_name = (ch.get("country_name") or "").lower()
 
-                    if target_country != c_code and not (len(target_country) > 2 and target_country in c_name):
+                    if target_country != c_code and not (
+                        len(target_country) > 2 and target_country in c_name
+                    ):
                         country_match = False
 
                 if country_match:
                     name_match = filter_text in ch["name"].lower()
-                    country_name_match = filter_text in ch.get("country_name", "").lower()
+                    country_name_match = (
+                        filter_text in ch.get("country_name", "").lower()
+                    )
 
                     if name_match or country_name_match:
                         self.sidebar_items.append(ch)
@@ -816,8 +820,8 @@ class Player:
                         if len(self.sidebar_items) >= 200:
                             break
 
-        if not hasattr(self, "_fetching_flags"):
-            self.fetching_flags = set()
+        if not hasattr(self, "fetching_flags"):
+            self.fetching_flags: set[Any] = set()
 
         for ch in self.sidebar_items:
             img = None
@@ -830,19 +834,24 @@ class Player:
                 if os.path.exists(flag_path):
                     if c_code not in self.flags.flag_images:
                         try:
-                            self.flags.flag_images[c_code] = tk.PhotoImage(file=flag_path)
+                            self.flags.flag_images[c_code] = tk.PhotoImage(
+                                file=flag_path
+                            )
                         except Exception:
                             pass
                     img = self.flags.flag_images.get(c_code)
                 else:
                     if c_code not in self.fetching_flags:
                         self.fetching_flags.add(c_code)
+
                         threading.Thread(
                             target=self.flags.fetch_only, args=(c_code,), daemon=True
                         ).start()
 
             if img:
-                self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}", image=img)
+                self.sidebar_listbox.insert(
+                    "", tk.END, text=f"   {ch['name']}", image=img
+                )
             else:
                 self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}")
 
@@ -1061,9 +1070,7 @@ class Player:
         env = os.environ.copy()
         env["PYTHONPATH"] = os.pathsep.join(sys.path)
 
-        self.globe_process = subprocess.Popen(
-            cmd, stdin=subprocess.PIPE, env=env
-        )
+        self.globe_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, env=env)
 
         self.check_globe_process()
 

@@ -40,7 +40,7 @@ class Tuner:
         thread = threading.Thread(
             target=self.find_live_stream,
             args=(self.player.search_id, sel_lang, target_country),
-            daemon=True
+            daemon=True,
         )
 
         thread.start()
@@ -84,7 +84,9 @@ class Tuner:
         self.player.players[next_idx].stop()
         self.player.restore_channel_name()
 
-    def find_live_stream(self, my_search_id: int, sel_lang: str, target_country: str) -> None:
+    def find_live_stream(
+        self, my_search_id: int, sel_lang: str, target_country: str
+    ) -> None:
         working_channel = None
         valid_channels = self.player.channels
 
@@ -97,7 +99,10 @@ class Tuner:
                 if target_code in (ch.get("languages") or [])
             ]
 
-        if target_country != "" and target_country != self.player.country_placeholder.lower():
+        if (
+            target_country != ""
+            and target_country != self.player.country_placeholder.lower()
+        ):
             valid_channels = [
                 ch
                 for ch in valid_channels
@@ -127,10 +132,19 @@ class Tuner:
         found_event = threading.Event()
 
         def check_candidate(candidate: dict[str, Any]) -> dict[str, Any] | None:
-            if found_event.is_set() or not self.player.tuning or my_search_id != self.player.search_id:
+            if (
+                found_event.is_set()
+                or not self.player.tuning
+                or my_search_id != self.player.search_id
+            ):
                 return None
 
-            if self.player.is_roll and self.player.pending_channel and candidate["url"] == self.player.pending_channel["url"] and len(valid_channels) > 1:
+            if (
+                self.player.is_roll
+                and self.player.pending_channel
+                and candidate["url"] == self.player.pending_channel["url"]
+                and len(valid_channels) > 1
+            ):
                 return None
 
             try:
@@ -141,7 +155,11 @@ class Tuner:
                 )
 
                 with urllib.request.urlopen(req, timeout=data.url_timeout) as response:
-                    if found_event.is_set() or not self.player.tuning or my_search_id != self.player.search_id:
+                    if (
+                        found_event.is_set()
+                        or not self.player.tuning
+                        or my_search_id != self.player.search_id
+                    ):
                         return None
 
                     if response.status in [200, 206, 301, 302]:
@@ -151,7 +169,10 @@ class Tuner:
                             text_chunk = chunk.decode("utf-8", errors="ignore")
 
                             if "#EXTM3U" in text_chunk:
-                                if "#EXTINF" not in text_chunk and "#EXT-X" not in text_chunk:
+                                if (
+                                    "#EXTINF" not in text_chunk
+                                    and "#EXT-X" not in text_chunk
+                                ):
                                     return None
 
                             return candidate
@@ -199,7 +220,7 @@ class Tuner:
                     threading.Thread(
                         target=self.find_live_stream,
                         args=(new_search_id, sel_lang, target_country),
-                        daemon=True
+                        daemon=True,
                     ).start()
 
                 self.player.root.after(0, retry_find)
@@ -236,7 +257,9 @@ class Tuner:
             return
 
         if self.player.is_roll or self.player.stall_retries < data.max_retries:
-            self.player.stall_retries = 0 if self.player.is_roll else self.player.stall_retries + 1
+            self.player.stall_retries = (
+                0 if self.player.is_roll else self.player.stall_retries + 1
+            )
 
             next_idx = 1 if self.player.active_idx == 0 else 0
             self.player.player_search_ids[next_idx] = -1
@@ -252,7 +275,7 @@ class Tuner:
                 threading.Thread(
                     target=self.find_live_stream,
                     args=(new_search_id, sel_lang, target_country),
-                    daemon=True
+                    daemon=True,
                 ).start()
             elif self.player.pending_channel:
                 self.prepare_switch(self.player.pending_channel, new_search_id)
