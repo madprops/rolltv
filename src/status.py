@@ -108,7 +108,10 @@ class Status:
                 getattr(player_mpv, "vo_drop_frame_count", None) or 0
             )
 
-            elapsed = time.time() - getattr(self.player, "playback_start_time", time.time())
+            elapsed = time.time() - getattr(
+                self.player, "playback_start_time", time.time()
+            )
+
             if elapsed < 60:
                 play_time_str = f"{int(elapsed)}s"
             elif elapsed < 3600:
