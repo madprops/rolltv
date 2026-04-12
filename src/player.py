@@ -746,12 +746,12 @@ class Player:
             self.sidebar_update_job = None
 
         if immediate:
-            self._update_sidebar_impl()
+            self.update_sidebar_impl()
         else:
             delay = 1000 if self.active_sidebar == "country" else 150
-            self.sidebar_update_job = self.root.after(delay, self._update_sidebar_impl)
+            self.sidebar_update_job = self.root.after(delay, self.update_sidebar_impl)
 
-    def _update_sidebar_impl(self) -> None:
+    def update_sidebar_impl(self) -> None:
         self.sidebar_update_job = None
 
         if not self.active_sidebar:
@@ -803,23 +803,21 @@ class Player:
                     c_code = (ch.get("country_code") or "").lower()
                     c_name = (ch.get("country_name") or "").lower()
 
-                    if target_country != c_code and not (
-                        len(target_country) > 2 and target_country in c_name
-                    ):
+                    if target_country != c_code and not (len(target_country) > 2 and target_country in c_name):
                         country_match = False
 
                 if country_match:
                     name_match = filter_text in ch["name"].lower()
-
-                    country_name_match = (
-                        filter_text in ch.get("country_name", "").lower()
-                    )
+                    country_name_match = filter_text in ch.get("country_name", "").lower()
 
                     if name_match or country_name_match:
                         self.sidebar_items.append(ch)
 
                         if len(self.sidebar_items) >= 200:
                             break
+
+        if not hasattr(self, "_fetching_flags"):
+            self.fetching_flags = set()
 
         for ch in self.sidebar_items:
             img = None
@@ -832,21 +830,19 @@ class Player:
                 if os.path.exists(flag_path):
                     if c_code not in self.flags.flag_images:
                         try:
-                            self.flags.flag_images[c_code] = tk.PhotoImage(
-                                file=flag_path
-                            )
+                            self.flags.flag_images[c_code] = tk.PhotoImage(file=flag_path)
                         except Exception:
                             pass
                     img = self.flags.flag_images.get(c_code)
                 else:
-                    threading.Thread(
-                        target=self.flags.fetch_only, args=(c_code,), daemon=True
-                    ).start()
+                    if c_code not in self.fetching_flags:
+                        self.fetching_flags.add(c_code)
+                        threading.Thread(
+                            target=self.flags.fetch_only, args=(c_code,), daemon=True
+                        ).start()
 
             if img:
-                self.sidebar_listbox.insert(
-                    "", tk.END, text=f"   {ch['name']}", image=img
-                )
+                self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}", image=img)
             else:
                 self.sidebar_listbox.insert("", tk.END, text=f"   {ch['name']}")
 
@@ -886,6 +882,7 @@ class Player:
 
         if item_id:
             children = self.sidebar_listbox.get_children()
+
             try:
                 index = children.index(item_id)
                 self.sidebar_active_index = index
@@ -1090,8 +1087,11 @@ class Player:
             try:
                 if self.globe_process.stdin:
                     self.globe_process.stdin.close()
-                else:
-                    self.globe_process.terminate()
+
+                self.globe_process.terminate()
+                self.globe_process.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                self.globe_process.kill()
             except Exception:
                 pass
 
