@@ -139,7 +139,7 @@ class Player:
                 wid=str(frame.winfo_id()),
                 hwdec="auto-safe",
                 input_vo_keyboard=True,
-                demuxer_max_bytes=134217728,  # 128 MB forward buffer
+                demuxer_max_bytes=1207959552,  # 1.125 GB total buffer (1GB back + 128MB forward)
                 demuxer_max_back_bytes=1073741824,  # 1 GB backward buffer (approx 15-20 mins HD)
                 cache="yes",
             )
