@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
-from data import data
-from info import info
+from rolltv.data import data
+from rolltv.info import info
 
 
 class Sidebar:

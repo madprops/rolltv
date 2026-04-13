@@ -3,7 +3,7 @@ import tkinter as tk
 import urllib.request
 from typing import Any
 
-from info import info
+from rolltv.info import info
 
 
 class Flags:

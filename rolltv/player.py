@@ -10,17 +10,17 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
-from utils import utils
-from data import data
-from info import info
-from args import args
-from sidebar import Sidebar
-from topbar import Topbar
-from store import store
-from ipc import IPCListener
-from flags import Flags
-from status import Status
-from tuner import Tuner
+from rolltv.utils import utils
+from rolltv.data import data
+from rolltv.info import info
+from rolltv.args import args
+from rolltv.sidebar import Sidebar
+from rolltv.topbar import Topbar
+from rolltv.store import store
+from rolltv.ipc import IPCListener
+from rolltv.flags import Flags
+from rolltv.status import Status
+from rolltv.tuner import Tuner
 
 
 class Player:

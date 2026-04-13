@@ -1,7 +1,7 @@
 import argparse
 
-from info import info
-from store import store
+from rolltv.info import info
+from rolltv.store import store
 
 
 class Args:

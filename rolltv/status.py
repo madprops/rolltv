@@ -2,8 +2,8 @@ import tkinter as tk
 import time
 from typing import Any
 
-from data import data
-from args import args
+from rolltv.data import data
+from rolltv.args import args
 
 
 class Status:

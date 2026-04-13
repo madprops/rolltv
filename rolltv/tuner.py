@@ -6,10 +6,10 @@ import urllib.request
 import concurrent.futures
 from typing import Any
 
-from data import data
-from store import store
-from sound import sound
-from args import args
+from rolltv.data import data
+from rolltv.store import store
+from rolltv.sound import sound
+from rolltv.args import args
 
 
 class Tuner:

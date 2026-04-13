@@ -5,7 +5,7 @@ import hashlib
 import threading
 from typing import Any
 
-from info import info
+from rolltv.info import info
 
 
 class IPCListener:

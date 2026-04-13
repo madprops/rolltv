@@ -2,8 +2,8 @@ import os
 import json
 from typing import Any, cast
 
-from data import data
-from utils import utils
+from rolltv.data import data
+from rolltv.utils import utils
 
 
 class Store:

@@ -9,11 +9,11 @@ import tkinter as tk
 import urllib.request
 from typing import Any
 
-from info import info
-from data import data
-from utils import utils
-from sound import sound
-from player import Player
+from rolltv.info import info
+from rolltv.data import data
+from rolltv.utils import utils
+from rolltv.sound import sound
+from rolltv.player import Player
 
 LOCKS = []
 
