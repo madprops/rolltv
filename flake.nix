@@ -10,6 +10,7 @@
       "x86_64-linux"
       "aarch64-linux"
     ];
+
     forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
   in {
     packages = forAllSystems (system:
@@ -42,6 +43,7 @@
 
           preBuild = ''
             export HOME=$(mktemp -d)
+
             # Fix PyPI to Nixpkgs naming mismatch to prevent dependency checker crash
             sed -i 's/python-mpv/mpv/g' requirements.txt
           '';
@@ -62,10 +64,10 @@
           ];
 
           postInstall = ''
-            APP_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.name)')
-            APP_FULL_NAME=$(${pkgs.python3}/bin/python -c 'from src.info import info; print(info.full_name)')
+            APP_NAME=$(${pkgs.python3}/bin/python -c 'from rolltv.info import info; print(info.name)')
+            APP_FULL_NAME=$(${pkgs.python3}/bin/python -c 'from rolltv.info import info; print(info.full_name)')
 
-            install -Dm644 src/icon.png $out/share/icons/hicolor/256x256/apps/$APP_NAME.png
+            install -Dm644 rolltv/icon.png $out/share/icons/hicolor/256x256/apps/$APP_NAME.png
 
             mkdir -p $out/share/applications
             cat > $out/share/applications/$APP_NAME.desktop <<EOF

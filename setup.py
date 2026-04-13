@@ -3,14 +3,14 @@ import platform
 import sys
 from pathlib import Path
 from setuptools import setup
-from src.info import info
+from rolltv.info import info
 
 requirements = []
 
 def _copy_icon_file():
     # Adjusted this path to what is likely correct.
     # If info.name is actually the root folder name, change it back.
-    source = Path("src/icon.png").expanduser().resolve()
+    source = Path("rolltv/icon.png").expanduser().resolve()
     destination = Path(f"~/.local/share/icons/{info.name}.png").expanduser().resolve()
 
     # Ensure the icons folder exists
@@ -58,7 +58,7 @@ with open("requirements.txt") as f:
 setup(
     name=info.name,
     version=info.version,
-    package_dir={"": "src"},
+    package_dir={"": "rolltv"},
     packages=[""],
     package_data={"": ["*.toml", "*.txt", "*.png"]},
     install_requires=requirements,
