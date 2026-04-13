@@ -8,12 +8,9 @@ from rolltv.info import info
 requirements = []
 
 def _copy_icon_file():
-    # Adjusted this path to what is likely correct.
-    # If info.name is actually the root folder name, change it back.
     source = Path("rolltv/icon.png").expanduser().resolve()
     destination = Path(f"~/.local/share/icons/{info.name}.png").expanduser().resolve()
 
-    # Ensure the icons folder exists
     destination.parent.mkdir(parents=True, exist_ok=True)
 
     shutil.copy2(source, destination)
@@ -31,7 +28,6 @@ Categories=Utility;
 
     file_path = Path(f"~/.local/share/applications/{info.name}.desktop").expanduser().resolve()
 
-    # Ensure the applications folder exists
     file_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(file_path, "w") as f:
@@ -45,7 +41,6 @@ def _post_install():
             _copy_icon_file()
             _create_desktop_file()
         except Exception as e:
-            # Writing to stderr forces the error to show up in the console
             print(f"Error during post install: {e}", file=sys.stderr)
 
 with open("requirements.txt") as f:
@@ -58,13 +53,14 @@ with open("requirements.txt") as f:
 setup(
     name=info.name,
     version=info.version,
-    package_dir={"": "rolltv"},
-    packages=[""],
-    package_data={"": ["*.toml", "*.txt", "*.png"]},
+    # We remove package_dir and tell setuptools to find the 'rolltv' package
+    packages=["rolltv"],
+    package_data={"rolltv": ["*.toml", "*.txt", "*.png"]},
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            f"{info.name} = main:main",
+            # Point to rolltv.main
+            f"{info.name} = rolltv.main:main",
         ],
     },
 )

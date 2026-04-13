@@ -1,5 +1,6 @@
 import os
-from hugegull.info import info
+
+from rolltv.info import info
 
 
 class Data:
