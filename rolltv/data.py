@@ -1,5 +1,5 @@
 import os
-from info import info
+from hugegull.info import info
 
 
 class Data:
