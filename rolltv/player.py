@@ -142,6 +142,8 @@ class Player:
                 demuxer_max_bytes=1207959552,  # 1.125 GB total buffer (1GB back + 128MB forward)
                 demuxer_max_back_bytes=1073741824,  # 1 GB backward buffer (approx 15-20 mins HD)
                 cache="yes",
+                network_timeout=3,  # Force immediate disconnect for dead links
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64 AppleWebKit/537.36)", # Bypass 403s
             )
 
             player.volume = self.current_volume
@@ -907,6 +909,8 @@ class Player:
         return "break"
 
     def play_random(self) -> None:
+        self.is_roll = True
+        utils.print("[Roll] Loading random stream...")
         self.tuner.play_random()
 
     def animate_roll_button(self) -> None:
@@ -922,6 +926,9 @@ class Player:
         self.roll_anim_job = self.root.after(500, restore_style)
 
     def play_specific(self, channel: dict[str, Any], manual: bool = False) -> None:
+        if manual:
+            self.is_roll = False
+
         self.tuner.play_specific(channel, manual)
 
     def cancel_tuning(self, event: Any = None) -> None:
@@ -1031,11 +1038,17 @@ class Player:
                         self.stall_timeout_id = None
 
     def handle_idle_change(self, idx: int, is_idle: bool) -> None:
+        # Check if the inactive (tuning) player threw an idle status
+        if self.tuning and idx != self.active_idx:
+            if is_idle:
+                self.root.after(50, self.handle_tuning_failure)
+
+            return
+
         if self.active_idx != idx or self.tuning:
             return
 
         player = self.players[idx]
-
         if is_idle and not getattr(player, "pause", False):
             if getattr(self, "stall_timeout_id", None) is None:
                 self.stall_timeout_id = self.root.after(
@@ -1045,6 +1058,19 @@ class Player:
             if getattr(self, "stall_timeout_id", None) is not None:
                 self.root.after_cancel(self.stall_timeout_id)  # type: ignore
                 self.stall_timeout_id = None
+
+    def handle_tuning_failure(self) -> None:
+        if not self.tuning:
+            return
+
+        self.cancel_tuning()
+
+        if getattr(self, "is_roll", False):
+            utils.print("[Roll] Stream unreachable or timed out. Fast-rolling next...")
+            self.play_random()
+        else:
+            utils.print("[Player] Stream offline.")
+            self.show_message("Stream Offline")
 
     def reconnect_stream(self) -> None:
         self.stall_timeout_id = None
