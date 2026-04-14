@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import datetime
-import random
 import mpv  # type: ignore
 import threading
 import subprocess
