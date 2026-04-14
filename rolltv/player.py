@@ -917,7 +917,7 @@ class Player:
 
     def cancel_tuning_watchdog(self) -> None:
         if getattr(self, "roll_watchdog_id", None) is not None:
-            self.root.after_cancel(self.roll_watchdog_id)
+            self.root.after_cancel(self.roll_watchdog_id or "")
             self.roll_watchdog_id = None
 
     def force_tuning_timeout(self) -> None:
