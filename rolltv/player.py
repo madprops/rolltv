@@ -143,7 +143,7 @@ class Player:
                 demuxer_max_back_bytes=1073741824,  # 1 GB backward buffer (approx 15-20 mins HD)
                 cache="yes",
                 network_timeout=3,  # Force immediate disconnect for dead links
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64 AppleWebKit/537.36)", # Bypass 403s
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64 AppleWebKit/537.36)",  # Bypass 403s
             )
 
             player.volume = self.current_volume

@@ -7,6 +7,7 @@ from rolltv.info import info
 
 requirements = []
 
+
 def _copy_icon_file():
     source = Path("rolltv/icon.png").expanduser().resolve()
     destination = Path(f"~/.local/share/icons/{info.name}.png").expanduser().resolve()
@@ -14,6 +15,7 @@ def _copy_icon_file():
     destination.parent.mkdir(parents=True, exist_ok=True)
 
     shutil.copy2(source, destination)
+
 
 def _create_desktop_file():
     content = f"""[Desktop Entry]
@@ -26,12 +28,15 @@ Type=Application
 Categories=Utility;
 """
 
-    file_path = Path(f"~/.local/share/applications/{info.name}.desktop").expanduser().resolve()
+    file_path = (
+        Path(f"~/.local/share/applications/{info.name}.desktop").expanduser().resolve()
+    )
 
     file_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(file_path, "w") as f:
         f.write(content)
+
 
 def _post_install():
     system = platform.system()
@@ -42,6 +47,7 @@ def _post_install():
             _create_desktop_file()
         except Exception as e:
             print(f"Error during post install: {e}", file=sys.stderr)
+
 
 with open("requirements.txt") as f:
     for line in f:
