@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import datetime
+import random
 import mpv  # type: ignore
 import threading
 import subprocess
@@ -75,6 +76,7 @@ class Player:
         self.tuning_timeout: str | None = None
         self.country_count_job: str | None = None
         self.msg_timeout_id: str | None = None
+        self.roll_watchdog_id: str | None = None
         self.history = store.load_history()
         self.sidebar_items: list[dict[str, Any]] = []
         self.sidebar_active_index = 0
@@ -142,8 +144,8 @@ class Player:
                 demuxer_max_bytes=1207959552,  # 1.125 GB total buffer (1GB back + 128MB forward)
                 demuxer_max_back_bytes=1073741824,  # 1 GB backward buffer (approx 15-20 mins HD)
                 cache="yes",
-                network_timeout=3,  # Force immediate disconnect for dead links
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64 AppleWebKit/537.36)",  # Bypass 403s
+                network_timeout=3,
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64 AppleWebKit/537.36)",
             )
 
             player.volume = self.current_volume
@@ -168,12 +170,14 @@ class Player:
         def check_ready_0(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 current_id = self.player_search_ids[0]
+                self.root.after(0, self.cancel_tuning_watchdog)
                 self.root.after(0, self.tuner.commit_switch_if_valid, 0, current_id)
 
         @self.players[1].property_observer("playback-time")  # type: ignore
         def check_ready_1(name: str, value: Any) -> None:
             if value is not None and value > 0.1:
                 current_id = self.player_search_ids[1]
+                self.root.after(0, self.cancel_tuning_watchdog)
                 self.root.after(0, self.tuner.commit_switch_if_valid, 1, current_id)
 
         @self.players[0].property_observer("core-idle")  # type: ignore
@@ -908,9 +912,28 @@ class Player:
 
         return "break"
 
+    def start_tuning_watchdog(self) -> None:
+        self.cancel_tuning_watchdog()
+        self.roll_watchdog_id = self.root.after(3500, self.force_tuning_timeout)
+
+    def cancel_tuning_watchdog(self) -> None:
+        if getattr(self, "roll_watchdog_id", None) is not None:
+            self.root.after_cancel(self.roll_watchdog_id)
+            self.roll_watchdog_id = None
+
+    def force_tuning_timeout(self) -> None:
+        self.roll_watchdog_id = None
+
+        if not self.tuning:
+            return
+
+        utils.print("[Watchdog] Stream took too long to load. Forcing skip...")
+        self.handle_tuning_failure()
+
     def play_random(self) -> None:
         self.is_roll = True
         utils.print("[Roll] Loading random stream...")
+        self.start_tuning_watchdog()
         self.tuner.play_random()
 
     def animate_roll_button(self) -> None:
@@ -929,9 +952,11 @@ class Player:
         if manual:
             self.is_roll = False
 
+        self.start_tuning_watchdog()
         self.tuner.play_specific(channel, manual)
 
     def cancel_tuning(self, event: Any = None) -> None:
+        self.cancel_tuning_watchdog()
         self.tuner.cancel_tuning(event)
 
     def copy_link(self) -> None:
@@ -1042,13 +1067,13 @@ class Player:
         if self.tuning and idx != self.active_idx:
             if is_idle:
                 self.root.after(50, self.handle_tuning_failure)
-
             return
 
         if self.active_idx != idx or self.tuning:
             return
 
         player = self.players[idx]
+
         if is_idle and not getattr(player, "pause", False):
             if getattr(self, "stall_timeout_id", None) is None:
                 self.stall_timeout_id = self.root.after(
@@ -1060,6 +1085,8 @@ class Player:
                 self.stall_timeout_id = None
 
     def handle_tuning_failure(self) -> None:
+        self.cancel_tuning_watchdog()
+
         if not self.tuning:
             return
 
